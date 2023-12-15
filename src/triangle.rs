@@ -1,5 +1,6 @@
 use crate::vec3::Vec3;
 
+#[derive(Copy, Clone)]
 pub struct Triangle {
     pub p0: Vec3,
     pub p1: Vec3,
@@ -11,6 +12,6 @@ impl Triangle {
         let a: Vec3 = self.p1 - self.p0;
         let b: Vec3 = self.p2 - self.p0;
 
-        return a.cross(b);
+        return b.cross(a).normalize();
     }
 }

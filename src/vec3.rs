@@ -1,7 +1,7 @@
 use std::fmt;
 use std::ops;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Vec3 {
     pub x: f64,
     pub y: f64,
@@ -19,10 +19,13 @@ impl Vec3 {
     pub fn normalize(&self) -> Vec3 {
         (*self) * (1. / self.length())
     }
+
+    #[inline]
     pub fn dot(&self, other: Self) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
+    #[inline]
     pub fn cross(&self, other: Self) -> Vec3 {
         let a2b1: f64 = self.y * other.x;
         let a3b1: f64 = self.z * other.x;
@@ -39,6 +42,15 @@ impl Vec3 {
             z: a1b2 - a2b1,
         };
     }
+
+    pub fn pow(&self, other: f64) -> Vec3 {
+        return Vec3 {
+            x: self.x.powf(other),
+            y: self.y.powf(other),
+            z: self.z.powf(other),
+        }
+    }
+
 
     pub fn as_rgb(&self) -> Vec3 {
         let r: f64 = (self.x * 255.).floor().clamp(0., 255.);
@@ -57,6 +69,7 @@ impl fmt::Display for Vec3 {
 impl ops::Add for Vec3 {
     type Output = Self;
 
+    #[inline]
     fn add(self, other: Self) -> Vec3 {
         Self {
             x: self.x + other.x,
@@ -75,6 +88,7 @@ impl ops::AddAssign for Vec3 {
 impl ops::Sub for Vec3 {
     type Output = Self;
 
+    #[inline]
     fn sub(self, other: Self) -> Vec3 {
         Self {
             x: self.x - other.x,
@@ -98,6 +112,20 @@ impl ops::Mul<f64> for Vec3 {
             x: self.x * other,
             y: self.y * other,
             z: self.z * other,
+        }
+    }
+}
+
+impl ops::Mul<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    // term-by-term multiplication (like glsl)
+
+    fn mul(self, other: Vec3) -> Self::Output {
+        Self {
+            x: self.x * other.x,
+            y: self.y * other.y,
+            z: self.z * other.z,
         }
     }
 }
