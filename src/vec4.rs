@@ -2,31 +2,33 @@ use std::fmt;
 use std::ops;
 
 #[derive(Copy, Clone, Debug)]
-pub struct Vec3 {
+pub struct Vec4 {
     pub x: f64,
     pub y: f64,
     pub z: f64,
+    pub w: f64,
 }
 
-impl Vec3 {
-    pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
-        Vec3 { x: x, y: y, z: z }
+impl Vec4 {
+    pub fn new(x: f64, y: f64, z: f64, w: f64) -> Vec4 {
+        Vec4 { x: x, y: y, z: z, w: w }
     }
 
     pub fn length(&self) -> f64 {
-        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+        (self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w).sqrt()
     }
-    pub fn normalize(&self) -> Vec3 {
+    pub fn normalize(&self) -> Vec4 {
         (*self) * (1. / self.length())
     }
 
     #[inline]
     pub fn dot(&self, other: Self) -> f64 {
-        self.x * other.x + self.y * other.y + self.z * other.z
+        self.x * other.x + self.y * other.y + self.z * other.z + self.w*other.w
     }
 
     #[inline]
-    pub fn cross(&self, other: Self) -> Vec3 {
+    pub fn cross(&self, other: Self) -> Vec4 {
+        // 3d cross product with w=0
         let a2b1: f64 = self.y * other.x;
         let a3b1: f64 = self.z * other.x;
 
@@ -36,119 +38,127 @@ impl Vec3 {
         let a1b3: f64 = self.x * other.z;
         let a2b3: f64 = self.y * other.z;
 
-        return Vec3 {
+        return Vec4 {
             x: a2b3 - a3b2,
             y: a3b1 - a1b3,
             z: a1b2 - a2b1,
+            w: 0.,
         };
     }
 
-    pub fn pow(&self, other: f64) -> Vec3 {
-        return Vec3 {
+    pub fn pow(&self, other: f64) -> Vec4 {
+        return Vec4 {
             x: self.x.powf(other),
             y: self.y.powf(other),
             z: self.z.powf(other),
+            w: self.w.powf(other),
         }
     }
 
 
-    pub fn as_rgb(&self) -> Vec3 {
+    pub fn as_rgb(&self) -> Vec4 {
         let r: f64 = (self.x * 255.).floor().clamp(0., 255.);
         let g: f64 = (self.y * 255.).floor().clamp(0., 255.);
         let b: f64 = (self.z * 255.).floor().clamp(0., 255.);
-        return Vec3 { x: r, y: g, z: b };
+        let a: f64 = (self.w * 255.).floor().clamp(0., 255.);
+        return Vec4 { x: r, y: g, z: b, w: a};
     }
 }
 
-impl fmt::Display for Vec3 {
+impl fmt::Display for Vec4 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Vec3{{{}, {}, {}}}", self.x, self.y, self.z)
+        write!(f, "Vec4{{{}, {}, {}, {}}}", self.x, self.y, self.z, self.w)
     }
 }
 
-impl ops::Add for Vec3 {
+impl ops::Add for Vec4 {
     type Output = Self;
 
     #[inline]
-    fn add(self, other: Self) -> Vec3 {
+    fn add(self, other: Self) -> Vec4 {
         Self {
             x: self.x + other.x,
             y: self.y + other.y,
             z: self.z + other.z,
+            w: self.w + other.w,
         }
     }
 }
 
-impl ops::AddAssign for Vec3 {
+impl ops::AddAssign for Vec4 {
     fn add_assign(&mut self, other: Self) {
         *self = (*self) + other;
     }
 }
 
-impl ops::Sub for Vec3 {
+impl ops::Sub for Vec4 {
     type Output = Self;
 
     #[inline]
-    fn sub(self, other: Self) -> Vec3 {
+    fn sub(self, other: Self) -> Vec4 {
         Self {
             x: self.x - other.x,
             y: self.y - other.y,
             z: self.z - other.z,
+            w: self.w - other.w,
         }
     }
 }
 
-impl ops::SubAssign for Vec3 {
+impl ops::SubAssign for Vec4 {
     fn sub_assign(&mut self, other: Self) {
         *self = (*self) - other;
     }
 }
 
-impl ops::Mul<f64> for Vec3 {
-    type Output = Vec3;
+impl ops::Mul<f64> for Vec4 {
+    type Output = Vec4;
 
     fn mul(self, other: f64) -> Self::Output {
         Self {
             x: self.x * other,
             y: self.y * other,
             z: self.z * other,
+            w: self.w * other,
         }
     }
 }
 
-impl ops::Mul<Vec3> for Vec3 {
-    type Output = Vec3;
+impl ops::Mul<Vec4> for Vec4 {
+    type Output = Vec4;
 
     // term-by-term multiplication (like glsl)
 
-    fn mul(self, other: Vec3) -> Self::Output {
+    fn mul(self, other: Vec4) -> Self::Output {
         Self {
             x: self.x * other.x,
             y: self.y * other.y,
             z: self.z * other.z,
+            w: self.w * other.w,
         }
     }
 }
 
-impl ops::MulAssign<f64> for Vec3 {
+impl ops::MulAssign<f64> for Vec4 {
     fn mul_assign(&mut self, other: f64) {
         *self = (*self) * other;
     }
 }
 
-impl ops::Div<f64> for Vec3 {
-    type Output = Vec3;
+impl ops::Div<f64> for Vec4 {
+    type Output = Vec4;
 
     fn div(self, other: f64) -> Self::Output {
         Self {
             x: self.x / other,
             y: self.y / other,
             z: self.z / other,
+            w: self.w / other,
         }
     }
 }
 
-impl ops::DivAssign<f64> for Vec3 {
+impl ops::DivAssign<f64> for Vec4 {
     fn div_assign(&mut self, other: f64) {
         *self = (*self) / other;
     }

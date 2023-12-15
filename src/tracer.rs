@@ -1,33 +1,33 @@
 use crate::triangle::Triangle;
-use crate::vec3::Vec3;
+use crate::vec4::Vec4;
 
 const EPSILON: f64 = 0.00001;
-const AMBIENT_COLOR: Vec3 = Vec3 {x: 1., y: 1., z: 1.};
+const AMBIENT_COLOR: Vec4 = Vec4 {x: 1., y: 1., z: 1., w: 1.};
 
 
 struct Ray {
-    origin: Vec3,
-    dir: Vec3,
+    origin: Vec4,
+    dir: Vec4,
 }
 
 struct Intersection {
-    p: Vec3,
+    p: Vec4,
     t: f64,
     triangle: Triangle,
 }
 
 pub struct Light {
-    pub pos: Vec3,
-    pub col: Vec3,
+    pub pos: Vec4,
+    pub col: Vec4,
 }
 
 fn intersects(r: &Ray, t: &Triangle) -> Option<Intersection> {
     // moller-trumbore intersection test
     // adapted from https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection.html
 
-    let p0p1: Vec3 = t.p1 - t.p0;
-    let p0p2: Vec3 = t.p2 - t.p0;
-    let pvec: Vec3 = (r.dir).cross(p0p2);
+    let p0p1: Vec4 = t.p1 - t.p0;
+    let p0p2: Vec4 = t.p2 - t.p0;
+    let pvec: Vec4 = (r.dir).cross(p0p2);
     let det: f64 = p0p1.dot(pvec);
 
     if det.abs() < EPSILON {
@@ -35,14 +35,14 @@ fn intersects(r: &Ray, t: &Triangle) -> Option<Intersection> {
     }
 
     let inv_det: f64 = 1. / det;
-    let tvec: Vec3 = r.origin - t.p0;
+    let tvec: Vec4 = r.origin - t.p0;
     let u: f64 = tvec.dot(pvec) * inv_det;
 
     if u < 0.0 || u > 1.0 {
         return None;
     }
 
-    let qvec: Vec3 = tvec.cross(p0p1);
+    let qvec: Vec4 = tvec.cross(p0p1);
     let v: f64 = (r.dir).dot(qvec) * inv_det;
 
     if v < 0.0 || u + v > 1.0 {
@@ -59,7 +59,7 @@ fn intersects(r: &Ray, t: &Triangle) -> Option<Intersection> {
     });
 }
 
-fn brdf(p: &Vec3, t: &Triangle, cam: &Vec3, lights: &Vec<Light>) -> Vec3 {
+fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>) -> Vec4 {
     // phong brdf
     
     
@@ -69,15 +69,15 @@ fn brdf(p: &Vec3, t: &Triangle, cam: &Vec3, lights: &Vec<Light>) -> Vec3 {
     let ks: f64 = 1.;
     let ns: f64 = 50.;
 
-    let ambient: Vec3 = AMBIENT_COLOR*ka;
+    let ambient: Vec4 = AMBIENT_COLOR*ka;
 
-    let N: Vec3 = t.normal()*-1.;
-    let V: Vec3 = (*cam - *p).normalize();
+    let N: Vec4 = t.normal()*-1.;
+    let V: Vec4 = (*cam - *p).normalize();
 
-    let mut col: Vec3 = ambient;
+    let mut col: Vec4 = ambient;
 
     for light in lights {
-        let L: Vec3 = (light.pos-*p).normalize();
+        let L: Vec4 = (light.pos-*p).normalize();
     
         let lambertian: f64 = N.dot(L);
     
@@ -85,9 +85,9 @@ fn brdf(p: &Vec3, t: &Triangle, cam: &Vec3, lights: &Vec<Light>) -> Vec3 {
             continue;
         }
     
-        let diffuse = light.col*Vec3::new(1.,1.,1.)*(lambertian*kd);
+        let diffuse = light.col*Vec4::new(1.,1.,1.,1.)*(lambertian*kd);
     
-        let R: Vec3 = (N*(2.*lambertian))-L;
+        let R: Vec4 = (N*(2.*lambertian))-L;
     
         let spec: f64 = R.dot(V);
     
@@ -96,7 +96,7 @@ fn brdf(p: &Vec3, t: &Triangle, cam: &Vec3, lights: &Vec<Light>) -> Vec3 {
             continue;
         }
     
-        let specular: Vec3 = light.col*spec.powf(ns);
+        let specular: Vec4 = light.col*spec.powf(ns);
     
         col += diffuse+specular;
     }
@@ -106,9 +106,9 @@ fn brdf(p: &Vec3, t: &Triangle, cam: &Vec3, lights: &Vec<Light>) -> Vec3 {
 }
 
 pub fn raytrace(
-    screen: &mut Vec<Vec3>,
+    screen: &mut Vec<Vec4>,
     triangles: &Vec<Triangle>,
-    cam: &Vec3,
+    cam: &Vec4,
     lights: &Vec<Light>,
     res_x: usize,
     res_y: usize,
@@ -117,14 +117,14 @@ pub fn raytrace(
         let ux = -((i % res_y) as f64 / res_x as f64 * 2. - 1.);
         let uy = -((i / res_y) as f64 / res_y as f64 * 2. - 1.);
 
-        let d = Vec3::new(ux, uy, -1.).normalize();
+        let d = Vec4::new(ux, uy, -1., 0.).normalize();
 
         let r: Ray = Ray {
             origin: *cam,
             dir: d,
         };
 
-        let mut col: Vec3 = Vec3::new(0., 0., 0.);
+        let mut col: Vec4 = Vec4::new(0., 0., 0., 1.);
 
         let mut intersections: Vec<Intersection> = Vec::new();
 
@@ -151,8 +151,8 @@ pub fn raytrace(
         }
 
         screen[i] = brdf(&min_inter.p, &min_inter.triangle, &cam, &lights);
-        if i % (res_y * 100) == 0 {
-            println!("line: {}", i / res_y);
+        if i % 10000 == 0 {
+            println!("line: {}/{}", i, res_x*res_y);
         }
     }
 }

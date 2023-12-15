@@ -1,10 +1,10 @@
 use crate::triangle::Triangle;
-use crate::vec3::Vec3;
+use crate::vec4::Vec4;
 
 use std::fs;
 
 pub struct Obj {
-    pub vertices: Vec<Vec3>,
+    pub vertices: Vec<Vec4>,
     pub triangles: Vec<Triangle>,
 }
 
@@ -12,7 +12,7 @@ impl Obj {
     pub fn from_file(path: &str) -> Obj {
         let contents: String = fs::read_to_string(path).expect("couldn't open file");
 
-        let mut vertices: Vec<Vec3> = Vec::new();
+        let mut vertices: Vec<Vec4> = Vec::new();
         let mut triangles: Vec<Triangle> = Vec::new();
 
         for line in contents.split("\n") {
@@ -28,7 +28,7 @@ impl Obj {
                     let x: f64 = sl.next().unwrap().parse::<f64>().unwrap();
                     let y: f64 = sl.next().unwrap().parse::<f64>().unwrap();
                     let z: f64 = sl.next().unwrap().parse::<f64>().unwrap();
-                    let nv: Vec3 = Vec3::new(x, y, z);
+                    let nv: Vec4 = Vec4::new(x, y, z, 1.); 
                     vertices.push(nv);
 
                     //println!("added vertice: {}", nv);
@@ -45,9 +45,9 @@ impl Obj {
                     i1 -= 1;
                     i2 -= 1;
 
-                    let p0: Vec3 = vertices[i0];
-                    let p1: Vec3 = vertices[i1];
-                    let p2: Vec3 = vertices[i2];
+                    let p0: Vec4 = vertices[i0];
+                    let p1: Vec4 = vertices[i1];
+                    let p2: Vec4 = vertices[i2];
 
                     let nt: Triangle = Triangle {
                         p0: p0,
