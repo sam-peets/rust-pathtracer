@@ -1,9 +1,13 @@
 use crate::triangle::Triangle;
 use crate::vec4::Vec4;
 
-const EPSILON: f64 = 0.00001;
-const AMBIENT_COLOR: Vec4 = Vec4 {x: 1., y: 1., z: 1., w: 1.};
-
+const EPSILON: f64 = 0.0000001;
+const AMBIENT_COLOR: Vec4 = Vec4 {
+    x: 1.,
+    y: 1.,
+    z: 1.,
+    w: 1.,
+};
 
 struct Ray {
     origin: Vec4,
@@ -25,8 +29,8 @@ fn intersects(r: &Ray, t: &Triangle) -> Option<Intersection> {
     // moller-trumbore intersection test
     // adapted from https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection.html
 
-    let p0p1: Vec4 = t.p1 - t.p0;
-    let p0p2: Vec4 = t.p2 - t.p0;
+    let p0p1: Vec4 = t.p1.v - t.p0.v;
+    let p0p2: Vec4 = t.p2.v - t.p0.v;
     let pvec: Vec4 = (r.dir).cross(p0p2);
     let det: f64 = p0p1.dot(pvec);
 
@@ -35,7 +39,7 @@ fn intersects(r: &Ray, t: &Triangle) -> Option<Intersection> {
     }
 
     let inv_det: f64 = 1. / det;
-    let tvec: Vec4 = r.origin - t.p0;
+    let tvec: Vec4 = r.origin - t.p0.v;
     let u: f64 = tvec.dot(pvec) * inv_det;
 
     if u < 0.0 || u > 1.0 {
@@ -55,54 +59,53 @@ fn intersects(r: &Ray, t: &Triangle) -> Option<Intersection> {
         p: r.origin + r.dir * it,
         t: it,
         triangle: *t,
-
     });
 }
 
 fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>) -> Vec4 {
     // phong brdf
-    
-    
 
     let ka: f64 = 0.2;
-    let kd: f64 = 0.8;
-    let ks: f64 = 1.;
+    let kd: f64 = 1.0;
+    let ks: f64 = 0.8;
     let ns: f64 = 50.;
 
-    let ambient: Vec4 = AMBIENT_COLOR*ka;
+    let ambient: Vec4 = AMBIENT_COLOR * ka;
 
-    let N: Vec4 = t.normal()*-1.;
+    //let N: Vec4 = t.normal3p();
+    //let N: Vec4 = t.normal();
+    let N: Vec4 = t.normal_interp(&p);
+
     let V: Vec4 = (*cam - *p).normalize();
 
     let mut col: Vec4 = ambient;
 
     for light in lights {
-        let L: Vec4 = (light.pos-*p).normalize();
-    
+        let L: Vec4 = (light.pos - *p).normalize();
+
         let lambertian: f64 = N.dot(L);
-    
+
         if lambertian < 0. {
             continue;
         }
-    
-        let diffuse = light.col*Vec4::new(1.,1.,1.,1.)*(lambertian*kd);
-    
-        let R: Vec4 = (N*(2.*lambertian))-L;
-    
+
+        let diffuse = light.col * Vec4::new(1., 1., 1., 1.) * (lambertian * kd);
+
+        let R: Vec4 = (N * (2. * lambertian)) - L;
+
         let spec: f64 = R.dot(V);
-    
+
         if spec < 0. {
             col += diffuse;
             continue;
         }
-    
-        let specular: Vec4 = light.col*spec.powf(ns);
-    
-        col += diffuse+specular;
+
+        let specular: Vec4 = light.col * (spec.powf(ns) * ks);
+
+        col += diffuse + specular;
     }
 
     return col;
-
 }
 
 pub fn raytrace(
@@ -113,9 +116,13 @@ pub fn raytrace(
     res_x: usize,
     res_y: usize,
 ) {
-    for i in 0..(res_x*res_y) {
+    for i in 0..(res_x * res_y) {
         let ux = -((i % res_y) as f64 / res_x as f64 * 2. - 1.);
         let uy = -((i / res_y) as f64 / res_y as f64 * 2. - 1.);
+
+        if i % 10000 == 0 {
+            println!("line: {}/{}", i, res_x * res_y);
+        }
 
         let d = Vec4::new(ux, uy, -1., 0.).normalize();
 
@@ -151,8 +158,5 @@ pub fn raytrace(
         }
 
         screen[i] = brdf(&min_inter.p, &min_inter.triangle, &cam, &lights);
-        if i % 10000 == 0 {
-            println!("line: {}/{}", i, res_x*res_y);
-        }
     }
 }

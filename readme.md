@@ -4,6 +4,7 @@ Primarily a project to learn Rust.
 
 ## TODO
 
+- mat4 implementation
 - Command Line Options
     - in/output files
     - camera parameters

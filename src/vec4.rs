@@ -9,9 +9,20 @@ pub struct Vec4 {
     pub w: f64,
 }
 
+#[derive(Copy, Clone, Debug)]
+pub struct NVec4 {
+    pub v: Vec4,
+    pub n: Vec4,
+}
+
 impl Vec4 {
     pub fn new(x: f64, y: f64, z: f64, w: f64) -> Vec4 {
-        Vec4 { x: x, y: y, z: z, w: w }
+        Vec4 {
+            x: x,
+            y: y,
+            z: z,
+            w: w,
+        }
     }
 
     pub fn length(&self) -> f64 {
@@ -23,7 +34,7 @@ impl Vec4 {
 
     #[inline]
     pub fn dot(&self, other: Self) -> f64 {
-        self.x * other.x + self.y * other.y + self.z * other.z + self.w*other.w
+        self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
     }
 
     #[inline]
@@ -52,16 +63,20 @@ impl Vec4 {
             y: self.y.powf(other),
             z: self.z.powf(other),
             w: self.w.powf(other),
-        }
+        };
     }
-
 
     pub fn as_rgb(&self) -> Vec4 {
         let r: f64 = (self.x * 255.).floor().clamp(0., 255.);
         let g: f64 = (self.y * 255.).floor().clamp(0., 255.);
         let b: f64 = (self.z * 255.).floor().clamp(0., 255.);
         let a: f64 = (self.w * 255.).floor().clamp(0., 255.);
-        return Vec4 { x: r, y: g, z: b, w: a};
+        return Vec4 {
+            x: r,
+            y: g,
+            z: b,
+            w: a,
+        };
     }
 }
 

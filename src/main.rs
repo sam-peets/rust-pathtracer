@@ -3,7 +3,7 @@ mod tracer;
 mod triangle;
 mod vec4;
 
-use crate::{obj::Obj, vec4::Vec4, tracer::Light};
+use crate::{obj::Obj, tracer::Light, vec4::Vec4};
 
 use std::{fs::File, io::BufWriter, io::Write};
 
@@ -27,28 +27,33 @@ fn main() {
     const RES_X: usize = 500;
     const RES_Y: usize = 500;
 
-    let object: Obj = Obj::from_file("teapot.obj");
+    let object: Obj = Obj::from_file("cow-nonormals-2.obj");
+    println!(
+        "{} vertices, {} triangles",
+        object.vertices.len(),
+        object.triangles.len()
+    );
 
     let triangles = object.triangles;
     let mut lights: Vec<Light> = Vec::new();
 
-    lights.push(Light{
+    /*lights.push(Light{
         pos: Vec4::new(-5.,0.,5.,1.),
         col: Vec4::new(0.2,0.8,0.2,1.),
-    });
-    
-    lights.push(Light{
-        pos: Vec4::new(5.,0.,5.,1.),
-        col: Vec4::new(0.8,0.2,0.2,1.),
+    });*/
+
+    lights.push(Light {
+        pos: Vec4::new(5., 0., 5., 1.),
+        col: Vec4::new(0.8, 0.2, 0.2, 1.),
     });
 
-    lights.push(Light{
-        pos: Vec4::new(0.,3.,5.,1.),
+    /*lights.push(Light{
+        pos: Vec4::new(0.,4.,5.,1.),
         col: Vec4::new(0.2,0.2,0.8,1.),
-    });
+    });*/
 
     let mut screen = vec![Vec4::new(0., 0., 0., 1.); RES_X * RES_Y];
-    let cam: Vec4 = Vec4::new(0., 1.5, 5., 1.);
+    let cam: Vec4 = Vec4::new(0., 0., 8., 1.);
 
     tracer::raytrace(&mut screen, &triangles, &cam, &lights, RES_X, RES_Y);
 
