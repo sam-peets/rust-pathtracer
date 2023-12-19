@@ -1,6 +1,6 @@
+use crate::mat4::Mat4;
 use crate::triangle::Triangle;
 use crate::vec4::{NVec4, Vec4};
-use crate::mat4::Mat4;
 
 use std::fs;
 
@@ -32,8 +32,8 @@ impl Obj {
                     let z: f64 = sl.next().unwrap().parse::<f64>().unwrap();
                     let mut nv: Vec4 = Vec4::new(x, y, z, 1.);
                     println!("{nv}");
-                    nv = (*m)*nv;
-                    
+                    nv = (*m) * nv;
+
                     println!("{nv}");
                     let nnv: NVec4 = NVec4 {
                         v: nv,
@@ -89,7 +89,7 @@ impl Obj {
                 }
             }
         }
- 
+
         for v in &mut vertices {
             v.n = v.n.normalize();
         }

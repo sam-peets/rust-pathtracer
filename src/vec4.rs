@@ -68,10 +68,10 @@ impl Vec4 {
 
     pub fn as_rgb(&self) -> Vec4 {
         // clamp to [0,1], apply gamma correction, multiply by 255, round down
-        let r: f64 = (self.x.clamp(0.,1.).powf(1./2.2) * 255.0).floor();
-        let g: f64 = (self.y.clamp(0.,1.).powf(1./2.2) * 255.0).floor();
-        let b: f64 = (self.z.clamp(0.,1.).powf(1./2.2) * 255.0).floor();
-        let a: f64 = (self.w.clamp(0.,1.).powf(1./2.2) * 255.0).floor();
+        let r: f64 = (self.x.clamp(0., 1.).powf(1. / 2.2) * 255.0).floor();
+        let g: f64 = (self.y.clamp(0., 1.).powf(1. / 2.2) * 255.0).floor();
+        let b: f64 = (self.z.clamp(0., 1.).powf(1. / 2.2) * 255.0).floor();
+        let a: f64 = (self.w.clamp(0., 1.).powf(1. / 2.2) * 255.0).floor();
         return Vec4 {
             x: r,
             y: g,
