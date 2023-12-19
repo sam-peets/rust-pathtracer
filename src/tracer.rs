@@ -66,10 +66,10 @@ fn intersects(r: &Ray, t: &Triangle) -> Option<Intersection> {
 fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>, triangles: &Vec<Triangle>) -> Vec4 {
     // phong brdf
 
-    let ka: f64 = 0.2;
-    let kd: f64 = 1.0;
-    let ks: f64 = 0.8;
-    let ns: f64 = 50.;
+    let ka: f64 = 0.01;
+    let kd: f64 = 0.8;
+    let ks: f64 = 0.6;
+    let ns: f64 = 40.;
 
     let ambient: Vec4 = AMBIENT_COLOR * ka;
 

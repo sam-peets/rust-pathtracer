@@ -25,8 +25,8 @@ fn write_screen(path: &'static str, screen: Vec<Vec4>, res_x: usize, res_y: usiz
 }
 
 fn main() {
-    const RES_X: usize = 1000;
-    const RES_Y: usize = 1000;
+    const RES_X: usize = 500;
+    const RES_Y: usize = 500;
 
     let r: f64 = -3.1415/8.;
 
@@ -77,17 +77,17 @@ fn main() {
     });*/
 
     lights.push(Light {
-        pos: Vec4::new(-5., 5., 10., 1.),
-        col: Vec4::new(0.8, 0.2, 0.2, 1.),
+        pos: Vec4::new(-5., 5., 2., 1.),
+        col: Vec4::new(0.5, 0.1, 0.1, 1.),
     });
 
     lights.push(Light{
-        pos: Vec4::new(5.,5.,10.,1.),
-        col: Vec4::new(0.2,0.2,0.8,1.),
+        pos: Vec4::new(5.,5.,2.,1.),
+        col: Vec4::new(0.1,0.1,0.5,1.),
     });
 
     let mut screen = vec![Vec4::new(0., 0., 0., 1.); RES_X * RES_Y];
-    let cam: Vec4 = Vec4::new(-0.75, 2., 10., 1.);
+    let cam: Vec4 = Vec4::new(-0.75, 2., 7., 1.);
 
     tracer::raytrace(&mut screen, &triangles, &cam, &lights, RES_X, RES_Y, &mx);
 
