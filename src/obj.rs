@@ -1,5 +1,6 @@
 use crate::triangle::Triangle;
 use crate::vec4::{NVec4, Vec4};
+use crate::mat4::Mat4;
 
 use std::fs;
 
@@ -9,7 +10,7 @@ pub struct Obj {
 }
 
 impl Obj {
-    pub fn from_file(path: &str) -> Obj {
+    pub fn from_file(path: &str, m: &Mat4) -> Obj {
         let contents: String = fs::read_to_string(path).expect("couldn't open file");
 
         let mut vertices: Vec<NVec4> = Vec::new();
@@ -29,20 +30,33 @@ impl Obj {
                     let x: f64 = sl.next().unwrap().parse::<f64>().unwrap();
                     let y: f64 = sl.next().unwrap().parse::<f64>().unwrap();
                     let z: f64 = sl.next().unwrap().parse::<f64>().unwrap();
-                    let nv: Vec4 = Vec4::new(x, y, z, 1.);
+                    let mut nv: Vec4 = Vec4::new(x, y, z, 1.);
+                    println!("{nv}");
+                    nv = (*m)*nv;
+                    
+                    println!("{nv}");
                     let nnv: NVec4 = NVec4 {
                         v: nv,
                         n: Vec4::new(0., 0., 0., 0.),
                     };
                     vertices.push(nnv);
-
                     //println!("added vertice: {}", nv);
                 }
                 "f" => {
                     // face
-                    let mut i0: usize = sl.next().unwrap().parse::<usize>().unwrap();
-                    let mut i1: usize = sl.next().unwrap().parse::<usize>().unwrap();
-                    let mut i2: usize = sl.next().unwrap().parse::<usize>().unwrap();
+                    let mut v: Vec<usize> = Vec::new();
+                    for s in sl {
+                        let mut vspl = s.split("/");
+                        v.push(vspl.next().unwrap().parse::<usize>().unwrap());
+                        // TODO handle textures and maybe normals
+                    }
+
+                    //let mut i0: usize = sl.next().unwrap().parse::<usize>().unwrap();
+                    //let mut i1: usize = sl.next().unwrap().parse::<usize>().unwrap();
+                    //let mut i2: usize = sl.next().unwrap().parse::<usize>().unwrap();
+                    let mut i0: usize = v[0];
+                    let mut i1: usize = v[1];
+                    let mut i2: usize = v[2];
 
                     // obj use 1-based indexing, have to modify
                     // TODO: support negative indices
@@ -75,7 +89,7 @@ impl Obj {
                 }
             }
         }
-
+ 
         for v in &mut vertices {
             v.n = v.n.normalize();
         }

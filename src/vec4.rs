@@ -78,6 +78,16 @@ impl Vec4 {
             w: a,
         };
     }
+
+    pub fn elem(&self, c: usize) -> f64 {
+        match c {
+            0 => return self.x,
+            1 => return self.y,
+            2 => return self.z,
+            3 => return self.w,
+            _ => panic!("not a vector component"),
+        }
+    }
 }
 
 impl fmt::Display for Vec4 {
