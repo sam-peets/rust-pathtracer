@@ -2,11 +2,15 @@
 
 ![](img/bunny.png)
 
-Triangle raytracer using Möller–Trumbore intersection tests and Blinn-Phong shading. Primarily a project to learn Rust.
+Triangle raytracer using Möller–Trumbore intersection tests and Blinn-Phong shading.
+
+Primarily a project to learn Rust.
 
 ## Done
 
 - triangle rendering
+- vertex normal estimation
+- surface normal interpolation
 - blinn-phong shading
 - multiple coloured lights + shadows
 - basic .obj support
