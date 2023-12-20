@@ -14,7 +14,8 @@ Primarily a project to learn Rust.
 - blinn-phong shading
 - multiple coloured lights + shadows
 - basic .obj support
-- math types, 4d matrix and vectors
+- math types, 4d matrices/vectors
+- multithreading
 
 ## TODO
 
@@ -27,4 +28,4 @@ Primarily a project to learn Rust.
     - textures, vertex normals, etc.
 - full path tracing, "monte-carlo renderer"
 - optimization
-    - spatial division (kd-trees or octrees), multithreading, etc.
+    - spatial division (kd-trees or octrees), etc.

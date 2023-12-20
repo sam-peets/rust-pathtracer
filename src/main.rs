@@ -30,8 +30,8 @@ fn write_screen(path: &'static str, screen: &Vec<Vec4>, res_x: usize, res_y: usi
 }
 
 fn main() {
-    const RES_X: usize = 1000;
-    const RES_Y: usize = 1000;
+    const RES_X: usize = 400;
+    const RES_Y: usize = 225;
 
     let r: f64 = -3.1415 / 8.;
 
@@ -44,13 +44,13 @@ fn main() {
 
     let mut max = [Vec4::new(0., 0., 0., 0.); 4];
     max[0] = Vec4::new(1., 0., 0., 0.);
-    max[1] = Vec4::new(0., r.cos(), -r.sin(), 0.);
+    max[1] = Vec4::new(0., r.cos(), -(r.sin()), 0.);
     max[2] = Vec4::new(0., r.sin(), r.cos(), 0.);
     max[3] = Vec4::new(0., 0., 0., 1.);
 
     let ry: f64 = 3.1415 / 8.;
     let mut may = [Vec4::new(0., 0., 0., 0.); 4];
-    may[0] = Vec4::new(ry.cos(), 0., -ry.sin(), 0.);
+    may[0] = Vec4::new(ry.cos(), 0., -(ry.sin()), 0.);
     may[1] = Vec4::new(0., 1., 0., 0.);
     may[2] = Vec4::new(ry.sin(), 0., ry.cos(), 0.);
     may[3] = Vec4::new(0., 0., 0., 1.);
@@ -66,7 +66,7 @@ fn main() {
     let ms: Mat4 = Mat4 { m: mas };
     let my: Mat4 = Mat4 { m: may };
 
-    let object: Obj = Obj::from_file("bunny.obj", &(ms * my));
+    let object: Obj = Obj::from_file("xyzrgb_dragon.obj", &my);
     println!(
         "{} vertices, {} triangles",
         object.vertices.len(),
@@ -82,22 +82,22 @@ fn main() {
     });*/
 
     lights.push(Light {
-        pos: Vec4::new(-5., 5., 2., 1.),
+        pos: Vec4::new(-300., 150., 250., 1.),
         col: Vec4::new(0.5, 0.1, 0.1, 1.),
     });
 
     lights.push(Light {
-        pos: Vec4::new(5., 5., 2., 1.),
+        pos: Vec4::new(300., 150., 250., 1.),
         col: Vec4::new(0.1, 0.1, 0.5, 1.),
     });
 
     let mut screen = vec![Vec4::new(0., 0., 0., 1.); RES_X * RES_Y];
-    let cam: Vec4 = Vec4::new(-0.75, 2., 7., 1.);
+    let cam: Vec4 = Vec4::new(20., 0., 250., 1.);
     let screen_mutex = Arc::new(Mutex::new(screen));
 
     tracer::raytrace(
         &screen_mutex,
-        Box::leak(Box::new(triangles)),
+        Box::leak(Box::new(triangles)), // has to be a better way to make these 'static
         Box::leak(Box::new(cam)),
         Box::leak(Box::new(lights)),
         RES_X,

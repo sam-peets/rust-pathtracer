@@ -6,9 +6,11 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::{JoinHandle, Thread};
 
+use std::cmp;
+
 const EPSILON: f64 = 0.0000001;
 
-const NUM_THREADS: usize = 16;
+const NUM_THREADS: usize = 8;
 
 const AMBIENT_COLOR: Vec4 = Vec4 {
     x: 1.,
@@ -106,7 +108,7 @@ fn brdf(
         let lambertian: f64 = N.dot(L);
         let mut fail = false;
 
-        for t in triangles {
+        for t in triangles { // shadow rays
             let result: Option<Intersection> = intersects(&r, &t);
 
             if result.is_some() {
@@ -153,112 +155,66 @@ pub fn raytrace(
     m: &'static Mat4,
 ) {
     let mut threads: Vec<JoinHandle<_>> = Vec::new();
-    for i in 0..NUM_THREADS {
 
-    }
-    for i in 0..res_x {
+    let lines_per_thread = res_y / NUM_THREADS;
+
+    for c in 0..(NUM_THREADS) {
         let screen_mutex_clone = Arc::clone(screen);
-
-        if i % 10 == 0 {
-            println!("starting: {}/{}", i, res_x);
-        }
+        println!("starting thread {c}");
 
         threads.push(thread::spawn(move || {
-            for j in 0..res_y {
-                let mut res: Vec4 = Vec4::new(0., 0., 0., 0.);
-                let ux = -(((i * res_x + j) % res_y) as f64 / res_x as f64 * 2. - 1.);
-                let uy = -(((i * res_x + j) / res_y) as f64 / res_y as f64 * 2. - 1.);
-
-                let d = Vec4::new(ux, uy, -2., 0.).normalize();
-
-                let r: Ray = Ray {
-                    origin: (*m) * (*cam),
-                    dir: (*m) * d,
-                };
-
-                let mut intersections: Vec<Intersection> = Vec::new();
-
-                for t in triangles {
-                    let result: Option<Intersection> = intersects(&r, &t);
-                    if result.is_none() {
-                        continue;
-                    }
-
-                    intersections.push(result.unwrap());
+            for i in (c * lines_per_thread)..(cmp::min((c + 1) * lines_per_thread, res_y)) {
+                if i%5 == 0 {
+                    println!("thread {c}: working on {i}");
                 }
+                for j in 0..res_x {
+                    let mut res: Vec4 = Vec4::new(0., 0., 0., 0.);
+                    let ux = -((j as f64 / res_x as f64) * 2. - 1.) * (res_x as f64/res_y as f64);
+                    let uy = -((i as f64 / res_y as f64) * 2. - 1.);
 
-                if intersections.len() == 0 {
-                    res = Vec4::new(0.52, 0.80, 0.92, 1.0);
-                } else {
-                    let mut min_inter: &Intersection = &intersections[0];
+                    let d = Vec4::new(ux, uy, -2., 0.).normalize();
 
-                    for inter in &intersections {
-                        if inter.t < min_inter.t {
-                            min_inter = &inter;
+                    let r: Ray = Ray {
+                        origin: (*m) * (*cam),
+                        dir: (*m) * d,
+                    };
+
+                    let mut intersections: Vec<Intersection> = Vec::new();
+
+                    for t in triangles {
+                        let result: Option<Intersection> = intersects(&r, &t);
+                        if result.is_none() {
+                            continue;
                         }
-                    }
-                    res = brdf(&min_inter.p, &min_inter.triangle, &cam, &lights, triangles);
-                }
 
-                {
-                    let mut data = screen_mutex_clone.lock().unwrap();
-                    data[i * res_x + j] = res;
+                        intersections.push(result.unwrap());
+                    }
+
+                    if intersections.len() == 0 {
+                        res = Vec4::new(0.52, 0.80, 0.92, 1.0);
+                    } else {
+                        let mut min_inter: &Intersection = &intersections[0];
+
+                        for inter in &intersections {
+                            if inter.t < min_inter.t {
+                                min_inter = &inter;
+                            }
+                        }
+                        res = brdf(&min_inter.p, &min_inter.triangle, &cam, &lights, triangles);
+                    }
+
+                    {
+                        let mut data = screen_mutex_clone.lock().unwrap();
+                        data[i * res_x + j] = res;
+                    }
                 }
             }
-
-            println!("done werkin {i}");
-        }))
+            println!("{c} finished");
+        }));
     }
     let mut i = 0;
     for t in threads {
-        println!("{}: joining", i);
         let t_ = t.join();
         i += 1;
     }
-    /*
-    for i in 0..(res_x * res_y) {
-        let ux = -((i % res_y) as f64 / res_x as f64 * 2. - 1.);
-        let uy = -((i / res_y) as f64 / res_y as f64 * 2. - 1.);
-
-        if i % 10000 == 0 {
-            println!("line: {}/{}", i, res_x * res_y);
-        }
-
-        let d = Vec4::new(ux, uy, -2., 0.).normalize();
-
-        let r: Ray = Ray {
-            origin: (*m) * (*cam),
-            dir: (*m) * d,
-        };
-
-        let mut col: Vec4 = Vec4::new(0., 0., 0., 1.);
-
-        let mut intersections: Vec<Intersection> = Vec::new();
-
-        {
-            for t in triangles {
-                let result: Option<Intersection> = intersects(&r, &t);
-                if result.is_none() {
-                    continue;
-                }
-
-                intersections.push(result.unwrap());
-            }
-
-            if intersections.len() == 0 {
-                screen[i] = Vec4::new(0.52, 0.80, 0.92, 1.0);
-                continue;
-            }
-
-            let mut min_inter: &Intersection = &intersections[0];
-
-            for inter in &intersections {
-                if inter.t < min_inter.t {
-                    min_inter = &inter;
-                }
-            }
-
-            screen[i] = brdf(&min_inter.p, &min_inter.triangle, &cam, &lights, triangles);
-        }
-    }*/
 }
