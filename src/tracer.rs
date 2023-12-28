@@ -1,4 +1,5 @@
 use crate::mat4::Mat4;
+use crate::obj::Obj;
 use crate::triangle::Triangle;
 use crate::vec4::Vec4;
 
@@ -10,7 +11,7 @@ use std::cmp;
 
 const EPSILON: f64 = 0.0000001;
 
-const NUM_THREADS: usize = 8;
+const NUM_THREADS: usize = 16;
 
 const AMBIENT_COLOR: Vec4 = Vec4 {
     x: 1.,
@@ -19,9 +20,9 @@ const AMBIENT_COLOR: Vec4 = Vec4 {
     w: 1.,
 };
 
-struct Ray {
-    origin: Vec4,
-    dir: Vec4,
+pub struct Ray {
+    pub origin: Vec4,
+    pub dir: Vec4,
 }
 
 struct Intersection {
@@ -72,14 +73,8 @@ fn intersects(r: &Ray, t: &Triangle) -> Option<Intersection> {
     });
 }
 
-fn brdf(
-    p: &Vec4,
-    t: &Triangle,
-    cam: &Vec4,
-    lights: &Vec<Light>,
-    triangles: &Vec<Triangle>,
-) -> Vec4 {
-    // phong brdf
+fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>, object: &Obj) -> Vec4 {
+    // blinn-phong brdf
 
     let ka: f64 = 0.01;
     let kd: f64 = 0.8;
@@ -91,7 +86,10 @@ fn brdf(
     //let N: Vec4 = t.normal3p();
     //let N: Vec4 = t.normal();
 
-    let N: Vec4 = t.normal_interp(&p);
+    let mut N: Vec4 = t.normal_interp(&p);
+    if N.x.is_nan() {
+        N = t.normal(); // fallback if interpolation fails
+    }
 
     let V: Vec4 = (*cam - *p).normalize();
 
@@ -108,7 +106,8 @@ fn brdf(
         let lambertian: f64 = N.dot(L);
         let mut fail = false;
 
-        for t in triangles { // shadow rays
+        for t in object.head.ray_leaf(&r) {
+            // shadow rays
             let result: Option<Intersection> = intersects(&r, &t);
 
             if result.is_some() {
@@ -122,17 +121,18 @@ fn brdf(
             continue;
         }
 
-        if lambertian < 0. {
+        if lambertian <= 0. {
             continue;
         }
 
         let diffuse = light.col * Vec4::new(1., 1., 1., 1.) * (lambertian * kd);
+   
 
         let H: Vec4 = (L + V).normalize();
 
         let spec: f64 = N.dot(H);
 
-        if spec < 0. {
+        if spec <= 0. {
             col += diffuse;
             continue;
         }
@@ -141,13 +141,16 @@ fn brdf(
 
         col += diffuse + specular;
     }
-
+    if (col.x.is_nan() || col.y.is_nan() || col.z.is_nan()) {
+        println!("NaN value fixme");
+        return Vec4::new(0.,0.,0.,0.); // hack to cover weird case idk why this happens
+    }
     return col;
 }
 
 pub fn raytrace(
     screen: &Arc<Mutex<Vec<Vec4>>>,
-    triangles: &'static Vec<Triangle>,
+    object: &'static Obj,
     cam: &'static Vec4,
     lights: &'static Vec<Light>,
     res_x: usize,
@@ -164,12 +167,12 @@ pub fn raytrace(
 
         threads.push(thread::spawn(move || {
             for i in (c * lines_per_thread)..(cmp::min((c + 1) * lines_per_thread, res_y)) {
-                if i%5 == 0 {
+                if i % 5 == 0 {
                     println!("thread {c}: working on {i}");
                 }
                 for j in 0..res_x {
                     let mut res: Vec4 = Vec4::new(0., 0., 0., 0.);
-                    let ux = -((j as f64 / res_x as f64) * 2. - 1.) * (res_x as f64/res_y as f64);
+                    let ux = -((j as f64 / res_x as f64) * 2. - 1.) * (res_x as f64 / res_y as f64);
                     let uy = -((i as f64 / res_y as f64) * 2. - 1.);
 
                     let d = Vec4::new(ux, uy, -2., 0.).normalize();
@@ -180,8 +183,7 @@ pub fn raytrace(
                     };
 
                     let mut intersections: Vec<Intersection> = Vec::new();
-
-                    for t in triangles {
+                    for t in object.head.ray_leaf(&r) {
                         let result: Option<Intersection> = intersects(&r, &t);
                         if result.is_none() {
                             continue;
@@ -200,7 +202,7 @@ pub fn raytrace(
                                 min_inter = &inter;
                             }
                         }
-                        res = brdf(&min_inter.p, &min_inter.triangle, &cam, &lights, triangles);
+                        res = brdf(&min_inter.p, &min_inter.triangle, &cam, &lights, &object);
                     }
 
                     {

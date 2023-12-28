@@ -1,12 +1,18 @@
+use crate::aabb::AABB;
+use crate::kdtree::KDNode;
 use crate::mat4::Mat4;
 use crate::triangle::Triangle;
 use crate::vec4::{NVec4, Vec4};
 
+use std::cmp;
 use std::fs;
+use std::sync::{Arc, Mutex};
 
 pub struct Obj {
     pub vertices: Vec<NVec4>,
-    pub triangles: Vec<Triangle>,
+    //pub triangles: Vec<Triangle>,
+    pub head: KDNode,
+    pub aabb: AABB,
 }
 
 impl Obj {
@@ -17,12 +23,21 @@ impl Obj {
         let mut itriangles: Vec<(usize, usize, usize)> = Vec::new();
         let mut triangles: Vec<Triangle> = Vec::new();
 
+        let mut minV = Vec4::new(0., 0., 0., 0.);
+        let mut maxV = Vec4::new(0., 0., 0., 0.);
+
         for line in contents.split("\n") {
             if line == "" {
                 continue;
             }
             let mut sl = line.split_whitespace();
-            let first: &str = sl.next().unwrap();
+
+            let fsl = sl.next();
+            if fsl.is_none() {
+                continue;
+            }
+
+            let first = fsl.unwrap();
 
             match first {
                 "v" => {
@@ -39,8 +54,16 @@ impl Obj {
                         v: nv,
                         n: Vec4::new(0., 0., 0., 0.),
                     };
+
                     vertices.push(nnv);
-                    //println!("added vertice: {}", nv);
+
+                    minV.x = f64::min(minV.x, nv.x);
+                    minV.y = f64::min(minV.y, nv.y);
+                    minV.z = f64::min(minV.z, nv.z);
+
+                    maxV.x = f64::max(maxV.x, nv.x);
+                    maxV.y = f64::max(maxV.y, nv.y);
+                    maxV.z = f64::max(maxV.z, nv.z);
                 }
                 "f" => {
                     // face
@@ -102,9 +125,17 @@ impl Obj {
             triangles.push(t);
         }
 
+        let aabb = AABB {
+            min: minV,
+            max: maxV,
+        };
+        println!("read: {} verts, {} triangles", vertices.len(), triangles.len());
+
         return Obj {
             vertices: vertices,
-            triangles: triangles,
+            //triangles: triangles,
+            head: KDNode::new(&triangles, 0, &aabb),
+            aabb: aabb,
         };
     }
 }

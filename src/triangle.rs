@@ -1,4 +1,5 @@
 use crate::vec4::{NVec4, Vec4};
+use crate::aabb::AABB;
 
 #[derive(Copy, Clone)]
 pub struct Triangle {
@@ -37,5 +38,29 @@ impl Triangle {
 
     pub fn normal3p(&self) -> Vec4 {
         return (self.p0.n + self.p1.n + self.p2.n).normalize();
+    }
+
+    pub fn midpoint(&self) -> Vec4 {
+        return (self.p0.v + self.p1.v + self.p2.v) / 3.;
+    }
+
+    pub fn aabb(&self) -> AABB {
+        let mut min = Vec4::new(0.,0.,0.,0.);
+        let mut max = Vec4::new(0.,0.,0.,0.);
+
+        for i in 0..3 {
+            min.set_elem(i, f64::min(min.elem(i), self.p0.v.elem(i)));
+            min.set_elem(i, f64::min(min.elem(i), self.p1.v.elem(i)));
+            min.set_elem(i, f64::min(min.elem(i), self.p2.v.elem(i)));
+
+            max.set_elem(i, f64::max(max.elem(i), self.p0.v.elem(i)));
+            max.set_elem(i, f64::max(max.elem(i), self.p1.v.elem(i)));
+            max.set_elem(i, f64::max(max.elem(i), self.p2.v.elem(i)));
+        }
+
+        return AABB{
+            min: min,
+            max: max,
+        };
     }
 }

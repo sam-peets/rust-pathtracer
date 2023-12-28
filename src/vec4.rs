@@ -89,6 +89,15 @@ impl Vec4 {
             _ => panic!("not a vector component"),
         }
     }
+    pub fn set_elem(&mut self, c: usize, v: f64) {
+        match c {
+            0 => self.x = v,
+            1 => self.y = v,
+            2 => self.z = v,
+            3 => self.w = v,
+            _ => panic!("not a vector component"),
+        }
+    }
 }
 
 impl fmt::Display for Vec4 {

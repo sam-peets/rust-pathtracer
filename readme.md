@@ -1,8 +1,9 @@
 # Rust Triangle Raytracer
 
-![](img/bunny.png)
+![](img/buddha.png)
+*~1,000,000 triangles in 5 minutes*
 
-Triangle raytracer using Möller–Trumbore intersection tests and Blinn-Phong shading.
+Triangle raytracer using Möller–Trumbore intersection tests, kd-trees and Blinn-Phong shading.
 
 Primarily a project to learn Rust.
 
@@ -16,6 +17,7 @@ Primarily a project to learn Rust.
 - basic .obj support
 - math types, 4d matrices/vectors
 - multithreading
+- spatial divison with kd-tree
 
 ## TODO
 
@@ -28,4 +30,5 @@ Primarily a project to learn Rust.
     - textures, vertex normals, etc.
 - full path tracing, "monte-carlo renderer"
 - optimization
-    - spatial division (kd-trees or octrees), etc.
+    - improve thread work distribution, some threads finish way early leaving cores unused
+    - etc.
