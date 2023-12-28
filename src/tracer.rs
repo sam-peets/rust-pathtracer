@@ -126,7 +126,6 @@ fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>, object: &Obj) -
         }
 
         let diffuse = light.col * Vec4::new(1., 1., 1., 1.) * (lambertian * kd);
-   
 
         let H: Vec4 = (L + V).normalize();
 
@@ -143,7 +142,7 @@ fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>, object: &Obj) -
     }
     if (col.x.is_nan() || col.y.is_nan() || col.z.is_nan()) {
         println!("NaN value fixme");
-        return Vec4::new(0.,0.,0.,0.); // hack to cover weird case idk why this happens
+        return Vec4::new(0., 0., 0., 0.); // hack to cover weird case idk why this happens
     }
     return col;
 }

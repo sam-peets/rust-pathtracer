@@ -129,7 +129,11 @@ impl Obj {
             min: minV,
             max: maxV,
         };
-        println!("read: {} verts, {} triangles", vertices.len(), triangles.len());
+        println!(
+            "read: {} verts, {} triangles",
+            vertices.len(),
+            triangles.len()
+        );
 
         return Obj {
             vertices: vertices,

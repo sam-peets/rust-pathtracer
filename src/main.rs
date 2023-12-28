@@ -68,7 +68,7 @@ fn main() {
     let ms: Mat4 = Mat4 { m: mas };
     let my: Mat4 = Mat4 { m: may };
 
-    let object: Obj = Obj::from_file("buddha.obj", &(ms*my));
+    let object: Obj = Obj::from_file("buddha.obj", &(ms * my));
     /*println!(
         "{} vertices, {} triangles",
         object.vertices.len(),
