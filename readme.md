@@ -1,8 +1,7 @@
 # Rust Triangle Raytracer
 
 ![](img/nefertiti.png)
-
-*~1,000,000 triangles in 5 minutes*
+*~500,000 triangles in 60 seconds*
 
 Triangle raytracer using Möller–Trumbore intersection tests, kd-trees and Blinn-Phong shading.
 
