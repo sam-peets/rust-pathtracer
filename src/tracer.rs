@@ -76,10 +76,10 @@ fn intersects(r: &Ray, t: &Triangle) -> Option<Intersection> {
 fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>, object: &Obj) -> Vec4 {
     // blinn-phong brdf
 
-    let ka: f64 = 0.01;
-    let kd: f64 = 0.8;
-    let ks: f64 = 0.6;
-    let ns: f64 = 40.;
+    let ka: f64 = 0.01; // 0.01
+    let kd: f64 = 0.8; // 0.8
+    let ks: f64 = 0.6; // 0.6
+    let ns: f64 = 40.; // 40
 
     let ambient: Vec4 = AMBIENT_COLOR * ka;
 
@@ -167,7 +167,7 @@ pub fn raytrace(
         threads.push(thread::spawn(move || {
             for i in (c * lines_per_thread)..(cmp::min((c + 1) * lines_per_thread, res_y)) {
                 if i % 5 == 0 {
-                    println!("thread {c}: working on {i}");
+                    println!("thread {}: working on {}/{}", c, i-(c*lines_per_thread), cmp::min((c+1)*lines_per_thread, res_y)-c*lines_per_thread);
                 }
                 for j in 0..res_x {
                     let mut res: Vec4 = Vec4::new(0., 0., 0., 0.);

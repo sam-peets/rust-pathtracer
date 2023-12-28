@@ -1,6 +1,6 @@
 # Rust Triangle Raytracer
 
-![](img/buddha2.png)
+![](img/nefertiti.png)
 
 *~1,000,000 triangles in 5 minutes*
 

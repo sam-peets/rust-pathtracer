@@ -32,25 +32,26 @@ fn write_screen(path: &'static str, screen: &Vec<Vec4>, res_x: usize, res_y: usi
 }
 
 fn main() {
-    const RES_X: usize = 500;
-    const RES_Y: usize = 1000;
+    const RES_X: usize = 250;
+    const RES_Y: usize = 500;
 
-    let r: f64 = -(3.1415 / 8.);
+    let rx: f64 = -3.1415/2.;
+    let ry: f64 = 3.1415 / 8.;
+    let rz: f64 = -(3.1415 / 8.);
 
     let mut maz = [Vec4::new(0., 0., 0., 0.); 4];
-    maz[0] = Vec4::new(r.cos(), -(r.sin()), 0., 0.);
-    maz[1] = Vec4::new(r.sin(), r.cos(), 0., 0.);
+    maz[0] = Vec4::new(rz.cos(), -(rz.sin()), 0., 0.);
+    maz[1] = Vec4::new(rz.sin(), rz.cos(), 0., 0.);
     maz[2] = Vec4::new(0., 0., 1., 0.);
     maz[3] = Vec4::new(0., 0., 0., 1.);
     println!("{}", maz[0]);
 
     let mut max = [Vec4::new(0., 0., 0., 0.); 4];
     max[0] = Vec4::new(1., 0., 0., 0.);
-    max[1] = Vec4::new(0., r.cos(), -(r.sin()), 0.);
-    max[2] = Vec4::new(0., r.sin(), r.cos(), 0.);
+    max[1] = Vec4::new(0., rx.cos(), -(rx.sin()), 0.);
+    max[2] = Vec4::new(0., rx.sin(), rx.cos(), 0.);
     max[3] = Vec4::new(0., 0., 0., 1.);
 
-    let ry: f64 = 3.1415 / 8.;
     let mut may = [Vec4::new(0., 0., 0., 0.); 4];
     may[0] = Vec4::new(ry.cos(), 0., -(ry.sin()), 0.);
     may[1] = Vec4::new(0., 1., 0., 0.);
@@ -68,7 +69,7 @@ fn main() {
     let ms: Mat4 = Mat4 { m: mas };
     let my: Mat4 = Mat4 { m: may };
 
-    let object: Obj = Obj::from_file("buddha.obj", &(ms * my));
+    let object: Obj = Obj::from_file("nefertiti.obj", &(my*mx));
     /*println!(
         "{} vertices, {} triangles",
         object.vertices.len(),
@@ -84,17 +85,17 @@ fn main() {
     });*/
 
     lights.push(Light {
-        pos: Vec4::new(-300., 150., 250., 1.),
+        pos: Vec4::new(-3000., 1500., 2500., 1.),
         col: Vec4::new(0.5, 0.1, 0.1, 1.),
     });
 
     lights.push(Light {
-        pos: Vec4::new(300., 150., 250., 1.),
+        pos: Vec4::new(3000., 1500., 2500., 1.),
         col: Vec4::new(0.1, 0.1, 0.5, 1.),
     });
 
     let mut screen = vec![Vec4::new(0., 0., 0., 1.); RES_X * RES_Y];
-    let cam: Vec4 = Vec4::new(0., 3., 6., 1.);
+    let cam: Vec4 = Vec4::new(45., 60., 150., 1.);
     let screen_mutex = Arc::new(Mutex::new(screen));
 
     println!("min: {}, max: {}", object.aabb.min, object.aabb.max);
@@ -106,7 +107,7 @@ fn main() {
         Box::leak(Box::new(lights)),
         RES_X,
         RES_Y,
-        Box::leak(Box::new(mx)),
+        Box::leak(Box::new(Mat4::identity())),
     );
 
     write_screen(
