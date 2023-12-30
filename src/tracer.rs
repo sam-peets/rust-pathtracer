@@ -10,8 +10,8 @@ use std::thread::{JoinHandle, Thread};
 use std::cmp;
 
 const EPSILON: f64 = 0.0000001;
-
 const NUM_THREADS: usize = 16;
+const MAX_DEPTH: usize = 4;
 
 const AMBIENT_COLOR: Vec4 = Vec4 {
     x: 1.,

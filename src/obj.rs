@@ -3,22 +3,47 @@ use crate::kdtree::KDNode;
 use crate::mat4::Mat4;
 use crate::triangle::Triangle;
 use crate::vec4::{NVec4, Vec4};
+use crate::material::Material;
 
 use std::cmp;
 use std::fs;
 use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
 
 pub struct Obj {
     pub vertices: Vec<NVec4>,
-    //pub triangles: Vec<Triangle>,
     pub head: KDNode,
     pub aabb: AABB,
 }
 
 impl Obj {
-    pub fn from_file(path: &str, m: &Mat4) -> Obj {
-        let contents: String = fs::read_to_string(path).expect("couldn't open file");
+    pub fn from_file(objpath: &str, mtlpath: Option<&str>, m: &Mat4) -> Obj {
+        let mut mtl: Option<HashMap<String, Material>> = None;
+        if (mtlpath.is_some()) {
+            mtl = Some(read_mtl(mtlpath.unwrap()));
+        }
+        
+        let (vertices, triangles, aabb) = read_obj(objpath, m);
+        
+        println!(
+            "read: {} verts, {} triangles",
+            vertices.len(),
+            triangles.len()
+        );
 
+        let head = KDNode::new(&triangles, 0, &aabb);
+
+        return Obj {
+            vertices: vertices,
+            head: head,
+            aabb: aabb,
+        };
+    }
+}
+
+pub fn read_obj(objpath: &str, m: &Mat4) -> (Vec<NVec4>, Vec<Triangle>, AABB) {
+
+        let obj_contents: String = fs::read_to_string(objpath).expect("couldn't open obj");
         let mut vertices: Vec<NVec4> = Vec::new();
         let mut itriangles: Vec<(usize, usize, usize)> = Vec::new();
         let mut triangles: Vec<Triangle> = Vec::new();
@@ -26,7 +51,7 @@ impl Obj {
         let mut minV = Vec4::new(0., 0., 0., 0.);
         let mut maxV = Vec4::new(0., 0., 0., 0.);
 
-        for line in contents.split("\n") {
+        for line in obj_contents.split("\n") {
             if line == "" {
                 continue;
             }
@@ -36,8 +61,11 @@ impl Obj {
             if fsl.is_none() {
                 continue;
             }
-
+            
             let first = fsl.unwrap();
+            if first.chars().next().unwrap() == '#' {
+                continue;
+            }
 
             match first {
                 "v" => {
@@ -74,9 +102,6 @@ impl Obj {
                         // TODO handle textures and maybe normals
                     }
 
-                    //let mut i0: usize = sl.next().unwrap().parse::<usize>().unwrap();
-                    //let mut i1: usize = sl.next().unwrap().parse::<usize>().unwrap();
-                    //let mut i2: usize = sl.next().unwrap().parse::<usize>().unwrap();
                     let mut i0: usize = v[0];
                     let mut i1: usize = v[1];
                     let mut i2: usize = v[2];
@@ -124,22 +149,18 @@ impl Obj {
             };
             triangles.push(t);
         }
-
         let aabb = AABB {
             min: minV,
             max: maxV,
         };
-        println!(
-            "read: {} verts, {} triangles",
-            vertices.len(),
-            triangles.len()
-        );
 
-        return Obj {
-            vertices: vertices,
-            //triangles: triangles,
-            head: KDNode::new(&triangles, 0, &aabb),
-            aabb: aabb,
-        };
-    }
+        return (vertices, triangles, aabb);
+
+}
+
+pub fn read_mtl(mtlpath: &str) -> HashMap<String, Material> {
+    let mut materials: HashMap<String, Material> = HashMap::new();
+    let mtl_contents: String = fs::read_to_string(mtlpath).expect("couldn't open mtl");
+
+    return materials;
 }

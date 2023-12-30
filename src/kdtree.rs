@@ -13,6 +13,9 @@ pub struct KDNode {
     pub triangles: Option<Vec<Triangle>>,
 }
 
+
+// TODO clean this up, it works but really messy right now
+// also use SAH for choosing split
 impl KDNode {
     pub fn new(triangles: &Vec<Triangle>, depth: usize, aabb: &AABB) -> KDNode {
         if triangles.len() == 0 {

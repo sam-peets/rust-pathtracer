@@ -5,6 +5,7 @@ mod obj;
 mod tracer;
 mod triangle;
 mod vec4;
+mod material;
 
 use crate::{aabb::AABB, mat4::Mat4, obj::Obj, tracer::Light, vec4::Vec4};
 
@@ -69,7 +70,7 @@ fn main() {
     let ms: Mat4 = Mat4 { m: mas };
     let my: Mat4 = Mat4 { m: may };
 
-    let object: Obj = Obj::from_file("obj/cornell.obj", &(Mat4::identity()));
+    let object: Obj = Obj::from_file("obj/cornell.obj", Some("obj/cornell.mtl"), &(Mat4::identity()));
     /*println!(
         "{} vertices, {} triangles",
         object.vertices.len(),

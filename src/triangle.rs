@@ -1,5 +1,7 @@
 use crate::aabb::AABB;
 use crate::vec4::{NVec4, Vec4};
+use crate::material::Material;
+
 
 #[derive(Copy, Clone)]
 pub struct Triangle {
