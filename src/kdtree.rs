@@ -4,7 +4,7 @@ use crate::triangle::Triangle;
 use crate::vec4::Vec4;
 use std::sync::{Arc, Mutex};
 
-const MAX_DEPTH: usize = 18;
+const MAX_DEPTH: usize = 8;
 
 pub struct KDNode {
     pub aabb: AABB,
@@ -47,15 +47,16 @@ impl KDNode {
         lt_v.set_elem(axis, median);
         let mut gt_v: Vec4 = aabb.min;
         gt_v.set_elem(axis, median);
+        let epsilon = Vec4::new(0.001,0.001,0.001,0.);
 
         let bb_lt = AABB {
-            min: aabb.min,
-            max: lt_v,
+            min: aabb.min - epsilon,
+            max: lt_v + epsilon,
         };
 
         let bb_gt = AABB {
-            min: gt_v,
-            max: aabb.max,
+            min: gt_v - epsilon,
+            max: aabb.max + epsilon,
         };
 
         let mut tlt: Vec<Triangle> = Vec::new();

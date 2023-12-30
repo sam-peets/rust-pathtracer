@@ -3,3 +3,6 @@
 
 *.obj
 *.ppm
+
+!cornell.mtl
+!cornell.obj

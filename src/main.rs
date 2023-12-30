@@ -32,11 +32,11 @@ fn write_screen(path: &'static str, screen: &Vec<Vec4>, res_x: usize, res_y: usi
 }
 
 fn main() {
-    const RES_X: usize = 250;
-    const RES_Y: usize = 500;
+    const RES_X: usize = 1000;
+    const RES_Y: usize = 1000;
 
     let rx: f64 = -3.1415/2.;
-    let ry: f64 = 3.1415 / 8.;
+    let ry: f64 = 3.1415/4.;
     let rz: f64 = -(3.1415 / 8.);
 
     let mut maz = [Vec4::new(0., 0., 0., 0.); 4];
@@ -69,7 +69,7 @@ fn main() {
     let ms: Mat4 = Mat4 { m: mas };
     let my: Mat4 = Mat4 { m: may };
 
-    let object: Obj = Obj::from_file("nefertiti.obj", &(my*mx));
+    let object: Obj = Obj::from_file("obj/cornell.obj", &(Mat4::identity()));
     /*println!(
         "{} vertices, {} triangles",
         object.vertices.len(),
@@ -82,7 +82,7 @@ fn main() {
     /*lights.push(Light{
         pos: Vec4::new(-30.,30.,10.,1.),
         col: Vec4::new(0.2,0.8,0.2,1.),
-    });*/
+    });
 
     lights.push(Light {
         pos: Vec4::new(-3000., 1500., 2500., 1.),
@@ -92,10 +92,15 @@ fn main() {
     lights.push(Light {
         pos: Vec4::new(3000., 1500., 2500., 1.),
         col: Vec4::new(0.1, 0.1, 0.5, 1.),
+    });*/
+
+    lights.push(Light {
+        pos: Vec4::new(0., 4., 5., 1.),
+        col: Vec4::new(1.,1.,1.,1.),
     });
 
     let mut screen = vec![Vec4::new(0., 0., 0., 1.); RES_X * RES_Y];
-    let cam: Vec4 = Vec4::new(45., 60., 150., 1.);
+    let cam: Vec4 = Vec4::new(0., 0., 20., 1.);
     let screen_mutex = Arc::new(Mutex::new(screen));
 
     println!("min: {}, max: {}", object.aabb.min, object.aabb.max);

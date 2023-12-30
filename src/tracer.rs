@@ -65,6 +65,9 @@ fn intersects(r: &Ray, t: &Triangle) -> Option<Intersection> {
     }
 
     let it: f64 = p0p2.dot(qvec) * inv_det;
+    if it <= 0. {
+        return None;
+    }
 
     return Some(Intersection {
         p: r.origin + r.dir * it,
@@ -78,17 +81,17 @@ fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>, object: &Obj) -
 
     let ka: f64 = 0.01; // 0.01
     let kd: f64 = 0.8; // 0.8
-    let ks: f64 = 0.6; // 0.6
+    let ks: f64 = 0.0; // 0.6
     let ns: f64 = 40.; // 40
 
     let ambient: Vec4 = AMBIENT_COLOR * ka;
 
     //let N: Vec4 = t.normal3p();
-    //let N: Vec4 = t.normal();
+    //let mut N: Vec4 = t.normal();
 
     let mut N: Vec4 = t.normal_interp(&p);
     if N.x.is_nan() {
-        N = t.normal(); // fallback if interpolation fails
+        N = t.normal(); // fallback to surface normal if interpolation fails
     }
 
     let V: Vec4 = (*cam - *p).normalize();
@@ -96,22 +99,30 @@ fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>, object: &Obj) -
     let mut col: Vec4 = ambient;
 
     for light in lights {
+        let mut lN: Vec4 = N;
         let L: Vec4 = (light.pos - *p).normalize();
+        
+        let mut lambertian = N.dot(L);
+
+        if lambertian <= 0. {
+            lN = N*-1.;
+            lambertian = lN.dot(L);
+        }
 
         let r: Ray = Ray {
-            origin: ((*p) + N * 0.001),
+            origin: ((*p) + lN*0.0001),
             dir: L,
         };
 
-        let lambertian: f64 = N.dot(L);
-        let mut fail = false;
-
+        let mut fail = false; 
+        
         for t in object.head.ray_leaf(&r) {
             // shadow rays
             let result: Option<Intersection> = intersects(&r, &t);
 
             if result.is_some() {
-                if result.unwrap().t > 0. {
+                let res: Intersection = result.unwrap();
+                if (res.p-*p).length() < (light.pos - *p).length() {
                     fail = true;
                     break;
                 }
@@ -120,16 +131,13 @@ fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>, object: &Obj) -
         if fail == true {
             continue;
         }
-
-        if lambertian <= 0. {
-            continue;
-        }
+        
 
         let diffuse = light.col * Vec4::new(1., 1., 1., 1.) * (lambertian * kd);
 
         let H: Vec4 = (L + V).normalize();
 
-        let spec: f64 = N.dot(H);
+        let spec: f64 = lN.dot(H);
 
         if spec <= 0. {
             col += diffuse;
@@ -171,7 +179,7 @@ pub fn raytrace(
                 }
                 for j in 0..res_x {
                     let mut res: Vec4 = Vec4::new(0., 0., 0., 0.);
-                    let ux = -((j as f64 / res_x as f64) * 2. - 1.) * (res_x as f64 / res_y as f64);
+                    let ux = ((j as f64 / res_x as f64) * 2. - 1.) * (res_x as f64 / res_y as f64);
                     let uy = -((i as f64 / res_y as f64) * 2. - 1.);
 
                     let d = Vec4::new(ux, uy, -2., 0.).normalize();
