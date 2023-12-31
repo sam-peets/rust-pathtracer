@@ -14,7 +14,7 @@ Primarily a project to learn Rust.
 - surface normal interpolation
 - blinn-phong shading
 - multiple coloured lights + shadows
-- basic .obj support
+- subset of .obj/mtl supported
 - math types, 4d matrices/vectors
 - multithreading
 - spatial divison with kd-tree
@@ -23,10 +23,10 @@ Primarily a project to learn Rust.
 
 - different brdf
     - blinn-phong doesn't look great, maybe cook-torrance?
-- command line options
+- command line options/input file
     - in/output files
     - camera parameters
-- more .obj/.mtl support
+- complete .obj/.mtl support
     - textures, vertex normals, etc.
 - full path tracing, "monte-carlo renderer"
 - optimization
