@@ -1,13 +1,13 @@
 use crate::aabb::AABB;
-use crate::vec4::{NVec4, Vec4};
 use crate::material::Material;
-
+use crate::vec4::{NVec4, Vec4};
 
 #[derive(Copy, Clone)]
 pub struct Triangle {
     pub p0: NVec4,
     pub p1: NVec4,
     pub p2: NVec4,
+    pub mat: Option<Material>,
 }
 
 impl Triangle {

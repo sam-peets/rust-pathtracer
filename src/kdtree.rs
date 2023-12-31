@@ -4,7 +4,7 @@ use crate::triangle::Triangle;
 use crate::vec4::Vec4;
 use std::sync::{Arc, Mutex};
 
-const MAX_DEPTH: usize = 8;
+const MAX_DEPTH: usize = 2;
 
 pub struct KDNode {
     pub aabb: AABB,
@@ -12,7 +12,6 @@ pub struct KDNode {
     pub gt: Option<Arc<KDNode>>,
     pub triangles: Option<Vec<Triangle>>,
 }
-
 
 // TODO clean this up, it works but really messy right now
 // also use SAH for choosing split
@@ -50,7 +49,7 @@ impl KDNode {
         lt_v.set_elem(axis, median);
         let mut gt_v: Vec4 = aabb.min;
         gt_v.set_elem(axis, median);
-        let epsilon = Vec4::new(0.001,0.001,0.001,0.);
+        let epsilon = Vec4::new(0.001, 0.001, 0.001, 0.);
 
         let bb_lt = AABB {
             min: aabb.min - epsilon,

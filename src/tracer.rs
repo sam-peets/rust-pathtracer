@@ -79,11 +79,10 @@ fn intersects(r: &Ray, t: &Triangle) -> Option<Intersection> {
 fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>, object: &Obj) -> Vec4 {
     // blinn-phong brdf
 
-    let ka: f64 = 0.01; // 0.01
-    let kd: f64 = 0.8; // 0.8
-    let ks: f64 = 0.0; // 0.6
-    let ns: f64 = 40.; // 40
-
+    let ns = t.mat.unwrap().ns;
+    let ka = t.mat.unwrap().ka;
+    let kd = t.mat.unwrap().kd;
+    let ks = t.mat.unwrap().ks;
     let ambient: Vec4 = AMBIENT_COLOR * ka;
 
     //let N: Vec4 = t.normal3p();
@@ -101,28 +100,28 @@ fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>, object: &Obj) -
     for light in lights {
         let mut lN: Vec4 = N;
         let L: Vec4 = (light.pos - *p).normalize();
-        
+
         let mut lambertian = N.dot(L);
 
         if lambertian <= 0. {
-            lN = N*-1.;
+            lN = N * -1.;
             lambertian = lN.dot(L);
         }
 
         let r: Ray = Ray {
-            origin: ((*p) + lN*0.0001),
+            origin: ((*p) + lN * 0.0001),
             dir: L,
         };
 
-        let mut fail = false; 
-        
+        let mut fail = false;
+
         for t in object.head.ray_leaf(&r) {
             // shadow rays
             let result: Option<Intersection> = intersects(&r, &t);
 
             if result.is_some() {
                 let res: Intersection = result.unwrap();
-                if (res.p-*p).length() < (light.pos - *p).length() {
+                if (res.p - *p).length() < (light.pos - *p).length() {
                     fail = true;
                     break;
                 }
@@ -131,9 +130,8 @@ fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>, object: &Obj) -
         if fail == true {
             continue;
         }
-        
 
-        let diffuse = light.col * Vec4::new(1., 1., 1., 1.) * (lambertian * kd);
+        let diffuse = light.col * kd * lambertian;
 
         let H: Vec4 = (L + V).normalize();
 
@@ -144,7 +142,7 @@ fn brdf(p: &Vec4, t: &Triangle, cam: &Vec4, lights: &Vec<Light>, object: &Obj) -
             continue;
         }
 
-        let specular: Vec4 = light.col * (spec.powf(ns) * ks);
+        let specular: Vec4 = light.col * (ks * spec.powf(ns));
 
         col += diffuse + specular;
     }
@@ -174,8 +172,13 @@ pub fn raytrace(
 
         threads.push(thread::spawn(move || {
             for i in (c * lines_per_thread)..(cmp::min((c + 1) * lines_per_thread, res_y)) {
-                if i % 5 == 0 {
-                    println!("thread {}: working on {}/{}", c, i-(c*lines_per_thread), cmp::min((c+1)*lines_per_thread, res_y)-c*lines_per_thread);
+                if i % 15 == 0 {
+                    println!(
+                        "thread {}: working on {}/{}",
+                        c,
+                        i - (c * lines_per_thread),
+                        cmp::min((c + 1) * lines_per_thread, res_y) - c * lines_per_thread
+                    );
                 }
                 for j in 0..res_x {
                     let mut res: Vec4 = Vec4::new(0., 0., 0., 0.);

@@ -2,6 +2,7 @@
 .vscode
 
 *.obj
+*.mtl
 *.ppm
 
 !cornell.mtl
