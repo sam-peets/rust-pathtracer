@@ -17,15 +17,15 @@ pub struct Material {
 
 impl Material {
     pub fn default() -> Material {
-Material {
-        ns: 40.,
-        ka: Vec4::new(0.01, 0.01, 0.01, 1.),
-        kd: Vec4::new(0.8, 0.8, 0.8, 1.),
-        ks: Vec4::new(0.5, 0.5, 0.5, 1.),
-        ke: Vec4::new(0., 0., 0., 0.),
-        ni: 0.,
-        d: 0.,
-        illum: 2,
-    }
+        Material {
+            ns: 40.,
+            ka: Vec4::new(0.01, 0.01, 0.01, 1.),
+            kd: Vec4::new(0.8, 0.8, 0.8, 1.),
+            ks: Vec4::new(0.5, 0.5, 0.5, 1.),
+            ke: Vec4::new(0., 0., 0., 0.),
+            ni: 0.,
+            d: 0.,
+            illum: 2,
+        }
     }
 }

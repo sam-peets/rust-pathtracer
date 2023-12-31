@@ -125,7 +125,8 @@ pub fn read_obj(objpath: &str, m: &Mat4) -> (Vec<NVec4>, Vec<Triangle>, AABB) {
                 itriangles.push((i0, i1, i2, cur_material));
                 //println!("added triangle: {} {} {}", p0, p1, p2);
             }
-            "o" => { // mayb extend this in the future, this *should* be fine for now
+            "o" => {
+                // mayb extend this in the future, this *should* be fine for now
                 cur_material = Some(Material::default());
             }
             "mtllib" => {
