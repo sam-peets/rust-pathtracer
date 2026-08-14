@@ -5,3 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.104"
+
+[profile.release]
+debug = true       # or debug = 2 for full debug info
+opt-level = 3      # keep maximum speed optimizations (default)

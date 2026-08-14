@@ -1,34 +1,45 @@
+use std::{fs::File, io::Write};
+
 use crate::{
-    camera::Camera, math::{
-        RayIntersects, mat4::Mat4, ray::{self, Ray}, vec4::Vec4,
-    }, obj::Obj, ppm::{Ppm, Rgb8},
+    camera::Camera,
+    math::{
+        RayIntersects,
+        mat4::Mat4,
+        ray::{self, Ray},
+        vec4::Vec4,
+    },
+    obj::Obj,
+    octree::OctreeNode,
+    ppm::{Ppm, Rgb8},
 };
 
-mod bvh;
 pub mod camera;
 mod math;
 mod obj;
+mod octree;
 mod ppm;
 
 fn main() {
-    let obj = Obj::open("teapot.obj").unwrap();
+    let obj = Obj::open("xyzrgb_dragon.obj").unwrap();
 
     let centroid = obj.centroid();
     dbg!(centroid);
 
     let translate = Mat4::translation(centroid * -1.0);
     let obj = obj.apply(translate);
+    let octree = OctreeNode::from_obj(obj);
+    eprintln!("built octree");
 
     let camera = Camera::new(
         Ray::new(
-            Vec4::from([0.0, 0.0, -5.0, 1.0]),
+            Vec4::from([0.0, 0.0, -150.0, 1.0]),
             Vec4::from([0.0, 0.0, 1.0, 0.0]),
         ),
         1.0,
     );
 
-    let width = 1000;
-    let height = 1000;
+    let width = 3000;
+    let height = 3000;
 
     let mut ppm = Ppm::new(width, height);
 
@@ -39,7 +50,8 @@ fn main() {
         let y = height - i / width;
 
         let mut min_intersection = None;
-        for tri in &obj.triangles {
+        let candidates = octree.find_candidates(ray);
+        for tri in candidates {
             if let Some(t) = tri.intersects(ray) {
                 if let Some((min_t, _)) = min_intersection {
                     if t < min_t {
@@ -61,5 +73,7 @@ fn main() {
         }
     }
 
-    println!("{}", ppm.emit())
+    // println!("{}", ppm.emit())
+    let mut outfile = File::create("out.ppm").unwrap();
+    outfile.write_all(&ppm.emit().into_bytes()).unwrap();
 }

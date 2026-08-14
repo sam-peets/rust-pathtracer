@@ -2,7 +2,7 @@ use std::{fs::File, io::Read, path::Path};
 
 use anyhow::anyhow;
 
-use crate::math::{mat4::Mat4, triangle::Triangle, vec4::Vec4};
+use crate::math::{aabb::Aabb, mat4::Mat4, triangle::Triangle, vec4::Vec4};
 
 pub struct Obj {
     pub triangles: Vec<Triangle>,
@@ -17,6 +17,18 @@ impl Obj {
         }
 
         s / self.triangles.len() as f32
+    }
+
+    pub fn aabb(&self) -> Aabb {
+        self.triangles
+            .iter()
+            .cloned()
+            .map(|tri| tri.aabb())
+            .reduce(Aabb::union)
+            .unwrap_or(Aabb::new(
+                Vec4::new(0.0, 0.0, 0.0, 0.0),
+                Vec4::new(0.0, 0.0, 0.0, 0.0),
+            ))
     }
 
     pub fn open(path: impl AsRef<Path>) -> anyhow::Result<Self> {

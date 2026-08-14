@@ -1,4 +1,4 @@
-use crate::math::{RayIntersects, mat4::Mat4, ray::Ray, vec4::Vec4};
+use crate::math::{RayIntersects, aabb::Aabb, mat4::Mat4, ray::Ray, vec4::Vec4};
 
 #[derive(Debug, Clone)]
 enum NormalType {
@@ -50,6 +50,22 @@ impl Triangle {
         let p3 = matrix * self.p3;
 
         Self::new(p1, p2, p3)
+    }
+
+    pub fn aabb(&self) -> Aabb {
+        let min = Vec4::new(
+            self.p1.x().min(self.p2.x()).min(self.p3.x()),
+            self.p1.y().min(self.p2.y()).min(self.p3.y()),
+            self.p1.z().min(self.p2.z()).min(self.p3.z()),
+            self.p1.w().min(self.p2.w()).min(self.p3.w()),
+        );
+        let max = Vec4::new(
+            self.p1.x().max(self.p2.x()).max(self.p3.x()),
+            self.p1.y().max(self.p2.y()).max(self.p3.y()),
+            self.p1.z().max(self.p2.z()).max(self.p3.z()),
+            self.p1.w().max(self.p2.w()).max(self.p3.w()),
+        );
+        Aabb::new(min, max)
     }
 }
 
