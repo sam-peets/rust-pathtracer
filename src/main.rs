@@ -8,6 +8,7 @@ use crate::{
         RayIntersects,
         mat4::Mat4,
         ray::{self, Ray},
+        triangle::Triangle,
         vec4::Vec4,
     },
     obj::Obj,
@@ -21,8 +22,13 @@ mod obj;
 mod octree;
 mod ppm;
 
+pub fn shade(intersection: Vec4, triangle: Triangle) -> Vec4 {
+    todo!()
+}
+
 fn main() {
     let obj = Obj::open("xyzrgb_dragon.obj").unwrap();
+    dbg!(obj.triangles.len());
 
     let centroid = obj.centroid();
     dbg!(centroid);
@@ -41,8 +47,8 @@ fn main() {
         1.0,
     );
 
-    let width = 4000;
-    let height = 4000;
+    let width = 7000;
+    let height = 7000;
 
     let mut ppm = Ppm::new(width, height);
 
