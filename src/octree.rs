@@ -30,6 +30,32 @@ enum OctreeData {
 }
 
 impl OctreeNode {
+    pub fn intersects(&self, ray: Ray) -> Option<(f32, &Triangle)> {
+        if self.aabb.intersects(ray).is_none() {
+            return None;
+        }
+
+        match &self.data {
+            OctreeData::Internal {
+                nnn,
+                nnp,
+                npn,
+                npp,
+                pnn,
+                pnp,
+                ppn,
+                ppp,
+            } => [nnn, nnp, npn, npp, pnn, pnp, ppn, ppp]
+                .iter()
+                .flat_map(|node| node.intersects(ray))
+                .min_by(|(t1, _), (t2, _)| t1.total_cmp(t2)),
+            OctreeData::Leaf { triangles } => triangles
+                .iter()
+                .flat_map(|tri| tri.intersects(ray).map(|s| (s, tri)))
+                .min_by(|(t1, _), (t2, _)| t1.total_cmp(t2)),
+        }
+    }
+
     pub fn from_obj(obj: Obj) -> Self {
         let triangles = obj.triangles;
         OctreeNode::build(triangles, 0)

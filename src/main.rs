@@ -38,8 +38,8 @@ fn main() {
         1.0,
     );
 
-    let width = 3000;
-    let height = 3000;
+    let width = 10000;
+    let height = 10000;
 
     let mut ppm = Ppm::new(width, height);
 
@@ -49,21 +49,7 @@ fn main() {
         let x = width - i % width;
         let y = height - i / width;
 
-        let mut min_intersection = None;
-        let candidates = octree.find_candidates(ray);
-        for tri in candidates {
-            if let Some(t) = tri.intersects(ray) {
-                if let Some((min_t, _)) = min_intersection {
-                    if t < min_t {
-                        min_intersection = Some((t, tri.clone()))
-                    }
-                } else {
-                    min_intersection = Some((t, tri.clone()))
-                }
-            }
-        }
-
-        if let Some((t, tri)) = min_intersection {
+        if let Some((t, tri)) = octree.intersects(ray) {
             let norm = tri.normal() * 0.5 + Vec4::from([0.5; 4]);
             let r = (norm.x() * 255.0) as u8;
             let g = (norm.y() * 255.0) as u8;
