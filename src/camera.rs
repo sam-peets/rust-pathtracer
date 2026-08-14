@@ -28,8 +28,8 @@ impl Camera {
                 let x = x as f32;
                 let width = width as f32;
 
-                let u = (2.0 * (x + 0.5) / width - 1.0) * aspect;
-                let v = 1.0 - 2.0 * (y + 0.5) / height;
+                let u = -((2.0 * (x + 0.5) / width - 1.0) * aspect);
+                let v = -(1.0 - 2.0 * (y + 0.5) / height);
 
                 let dir = right * u + up * v + forward * self.focal_length;
 

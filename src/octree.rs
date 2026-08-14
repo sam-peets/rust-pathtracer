@@ -5,11 +5,11 @@ use crate::{
     obj::Obj,
 };
 
-const MAX_DEPTH: usize = 8;
+const MAX_DEPTH: usize = 16;
 const MAX_TRIANGLES: usize = 32;
 
 pub struct OctreeNode {
-    aabb: Aabb,
+    pub aabb: Aabb,
     data: OctreeData,
 }
 

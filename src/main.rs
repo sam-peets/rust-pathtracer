@@ -1,5 +1,7 @@
 use std::{fs::File, io::Write};
 
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
 use crate::{
     camera::Camera,
     math::{
@@ -28,6 +30,7 @@ fn main() {
     let translate = Mat4::translation(centroid * -1.0);
     let obj = obj.apply(translate);
     let octree = OctreeNode::from_obj(obj);
+
     eprintln!("built octree");
 
     let camera = Camera::new(
@@ -38,26 +41,30 @@ fn main() {
         1.0,
     );
 
-    let width = 10000;
-    let height = 10000;
+    let width = 4000;
+    let height = 4000;
 
     let mut ppm = Ppm::new(width, height);
 
     let rays = camera.gen_rays(width, height);
 
-    for (i, ray) in rays.into_iter().enumerate() {
-        let x = width - i % width;
-        let y = height - i / width;
+    let cols: Vec<Rgb8> = rays
+        .par_iter()
+        .map(|ray| {
+            if let Some((t, tri)) = octree.intersects(*ray) {
+                let norm = tri.normal() * 0.5 + Vec4::from([0.5; 4]);
+                let r = (norm.x() * 255.0) as u8;
+                let g = (norm.y() * 255.0) as u8;
+                let b = (norm.z() * 255.0) as u8;
 
-        if let Some((t, tri)) = octree.intersects(ray) {
-            let norm = tri.normal() * 0.5 + Vec4::from([0.5; 4]);
-            let r = (norm.x() * 255.0) as u8;
-            let g = (norm.y() * 255.0) as u8;
-            let b = (norm.z() * 255.0) as u8;
+                Rgb8::new(r, g, b)
+            } else {
+                Rgb8::new(130, 180, 180)
+            }
+        })
+        .collect();
 
-            ppm.write(x, y, Rgb8::new(r, g, b));
-        }
-    }
+    ppm.buf = cols;
 
     // println!("{}", ppm.emit())
     let mut outfile = File::create("out.ppm").unwrap();

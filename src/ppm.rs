@@ -17,7 +17,7 @@ impl Rgb8 {
 pub struct Ppm {
     width: usize,
     height: usize,
-    buf: Vec<Rgb8>,
+    pub buf: Vec<Rgb8>,
 }
 
 impl Ppm {
