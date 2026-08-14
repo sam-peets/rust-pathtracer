@@ -17,7 +17,6 @@ impl Obj {
         }
 
         s / self.triangles.len() as f32
-
     }
 
     pub fn open(path: impl AsRef<Path>) -> anyhow::Result<Self> {
@@ -46,7 +45,9 @@ impl Obj {
                     let i2: usize = spl.next().ok_or(anyhow!("missing index 2"))?.parse()?;
                     let i3: usize = spl.next().ok_or(anyhow!("missing index 3"))?.parse()?;
 
-                    triangles.push(Triangle::new(verts[i1], verts[i2], verts[i3]));
+                    let tri = Triangle::new(verts[i1], verts[i2], verts[i3]);
+
+                    triangles.push(tri);
                 }
                 Some(_) => {}
                 None => {}
@@ -57,10 +58,14 @@ impl Obj {
     }
 
     pub fn apply(self, matrix: Mat4) -> Self {
-        let applied_tris = self.triangles.into_iter().map(|t| t.apply(matrix)).collect();
+        let applied_tris = self
+            .triangles
+            .into_iter()
+            .map(|t| t.apply(matrix))
+            .collect();
 
         return Self {
-            triangles: applied_tris
-        }
+            triangles: applied_tris,
+        };
     }
 }

@@ -1,22 +1,60 @@
-use crate::math::{mat4::Mat4, ray::Ray, vec4::Vec4};
+use crate::math::{RayIntersects, mat4::Mat4, ray::Ray, vec4::Vec4};
+
+#[derive(Debug, Clone)]
+enum NormalType {
+    Interpolated(Vec4, Vec4, Vec4),
+    Static(Vec4),
+}
 
 #[derive(Debug, Clone)]
 pub struct Triangle {
     p1: Vec4,
     p2: Vec4,
     p3: Vec4,
+
+    // internal
+    normal: NormalType,
 }
 
 impl Triangle {
     pub fn new(p1: Vec4, p2: Vec4, p3: Vec4) -> Self {
-        Self { p1, p2, p3 }
+        let e1 = p3 - p1;
+        let e2 = p3 - p2;
+        let normal = e1.cross(e2).normalize();
+        Self {
+            p1,
+            p2,
+            p3,
+            normal: NormalType::Static(normal),
+        }
+    }
+
+    pub fn set_vertex_normals(&mut self, n1: Vec4, n2: Vec4, n3: Vec4) {
+        self.normal = NormalType::Interpolated(n1, n2, n3);
+    }
+
+    pub fn normal(&self) -> Vec4 {
+        match self.normal {
+            NormalType::Interpolated(vec4, vec5, vec6) => todo!(),
+            NormalType::Static(n) => n,
+        }
     }
 
     pub fn centroid(&self) -> Vec4 {
-        (self.p1 + self.p2 + self.p3)/3.0
+        (self.p1 + self.p2 + self.p3) / 3.0
     }
 
-    pub fn intersects(&self, ray: Ray) -> Option<f32> {
+    pub fn apply(self, matrix: Mat4) -> Self {
+        let p1 = matrix * self.p1;
+        let p2 = matrix * self.p2;
+        let p3 = matrix * self.p3;
+
+        Self::new(p1, p2, p3)
+    }
+}
+
+impl RayIntersects for Triangle {
+    fn intersects(&self, ray: Ray) -> Option<f32> {
         let e1 = self.p2 - self.p1;
         let e2 = self.p3 - self.p1;
 
@@ -43,15 +81,5 @@ impl Triangle {
 
         let t = inv_det * e2.dot(s_cross_e1);
         if t > f32::EPSILON { Some(t) } else { None }
-    }
-
-    pub fn apply(self, matrix: Mat4) -> Self {
-        let p1 = matrix * self.p1;
-        let p2 = matrix * self.p2;
-        let p3 = matrix * self.p3;
-
-        return Self {
-            p1, p2, p3
-        }
     }
 }
