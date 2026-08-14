@@ -27,6 +27,7 @@ enum OctreeData {
     Leaf {
         triangles: Vec<Triangle>,
     },
+    Empty,
 }
 
 impl OctreeNode {
@@ -53,6 +54,7 @@ impl OctreeNode {
                 .iter()
                 .flat_map(|tri| tri.intersects(ray).map(|s| (s, tri)))
                 .min_by(|(t1, _), (t2, _)| t1.total_cmp(t2)),
+            OctreeData::Empty => None,
         }
     }
 
@@ -144,38 +146,5 @@ impl OctreeNode {
                 ppp,
             },
         }
-    }
-
-    pub fn find_candidates(&self, ray: Ray) -> Vec<Triangle> {
-        if self.aabb.intersects(ray).is_none() {
-            return Vec::new();
-        }
-
-        let mut candidates = Vec::new();
-
-        match &self.data {
-            OctreeData::Internal {
-                nnn,
-                nnp,
-                npn,
-                npp,
-                pnn,
-                pnp,
-                ppn,
-                ppp,
-            } => {
-                candidates.append(&mut nnn.find_candidates(ray));
-                candidates.append(&mut nnp.find_candidates(ray));
-                candidates.append(&mut npn.find_candidates(ray));
-                candidates.append(&mut npp.find_candidates(ray));
-                candidates.append(&mut pnn.find_candidates(ray));
-                candidates.append(&mut pnp.find_candidates(ray));
-                candidates.append(&mut ppn.find_candidates(ray));
-                candidates.append(&mut ppp.find_candidates(ray));
-            }
-            OctreeData::Leaf { triangles } => return triangles.clone(),
-        }
-
-        candidates
     }
 }
