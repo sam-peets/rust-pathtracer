@@ -1,5 +1,3 @@
-use std::{cmp::min, sync::Arc};
-
 use crate::{
     math::{RayIntersects, aabb::Aabb, ray::Ray, triangle::Triangle, vec4::Vec4},
     obj::Obj,

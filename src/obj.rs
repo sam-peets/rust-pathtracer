@@ -10,19 +10,12 @@ pub struct Obj {
 
 impl Obj {
     pub fn centroid(&self) -> Vec4 {
-        let mut s = Vec4::from([0.0, 0.0, 0.0, 0.0]);
-
-        for tri in &self.triangles {
-            s = s + tri.centroid();
-        }
-
-        s / self.triangles.len() as f32
+        self.aabb().centroid()
     }
 
     pub fn aabb(&self) -> Aabb {
         self.triangles
             .iter()
-            .cloned()
             .map(|tri| tri.aabb())
             .reduce(Aabb::union)
             .unwrap_or(Aabb::new(
@@ -76,8 +69,8 @@ impl Obj {
             .map(|t| t.apply(matrix))
             .collect();
 
-        return Self {
+        Self {
             triangles: applied_tris,
-        };
+        }
     }
 }

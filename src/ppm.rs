@@ -22,11 +22,11 @@ pub struct Ppm {
 
 impl Ppm {
     pub fn new(width: usize, height: usize) -> Self {
-        return Self {
+        Self {
             width,
             height,
             buf: vec![Rgb8::BLACK; width * height],
-        };
+        }
     }
 
     pub fn write(&mut self, x: usize, y: usize, color: Rgb8) {
@@ -40,7 +40,7 @@ impl Ppm {
             .into_iter()
             .map(|col| col.emit())
             .collect::<Vec<String>>()
-            .join(&" ");
+            .join(" ");
         s.push_str(&c);
         s
     }

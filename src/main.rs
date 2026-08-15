@@ -1,16 +1,11 @@
+use core::f32;
 use std::{fs::File, io::Write};
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::{
     camera::Camera,
-    math::{
-        RayIntersects,
-        mat4::Mat4,
-        ray::{self, Ray},
-        triangle::Triangle,
-        vec4::Vec4,
-    },
+    math::{mat4::Mat4, ray::Ray, triangle::Triangle, vec4::Vec4},
     obj::Obj,
     octree::OctreeNode,
     ppm::{Ppm, Rgb8},
@@ -27,28 +22,30 @@ pub fn shade(intersection: Vec4, triangle: Triangle) -> Vec4 {
 }
 
 fn main() {
-    let obj = Obj::open("xyzrgb_dragon.obj").unwrap();
+    let obj = Obj::open("models/cornell.obj").unwrap();
+    // let scaling = Mat4::scaling(Vec4::from([1000.0, 1000.0, 1000.0, 1.0]));
+    let rotation = Mat4::rotation(Vec4::from([0.0, 1.0, 0.0, 0.0]), f32::consts::PI);
     dbg!(obj.triangles.len());
 
     let centroid = obj.centroid();
     dbg!(centroid);
 
     let translate = Mat4::translation(centroid * -1.0);
-    let obj = obj.apply(translate);
+    let obj = obj.apply(translate).apply(rotation);
     let octree = OctreeNode::from_obj(obj);
 
     eprintln!("built octree");
 
     let camera = Camera::new(
         Ray::new(
-            Vec4::from([0.0, 0.0, -150.0, 1.0]),
+            Vec4::from([0.0, 0.0, -10.0, 1.0]),
             Vec4::from([0.0, 0.0, 1.0, 0.0]),
         ),
         1.0,
     );
 
-    let width = 7000;
-    let height = 7000;
+    let width = 1000;
+    let height = 1000;
 
     let mut ppm = Ppm::new(width, height);
 

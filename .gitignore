@@ -1,3 +1,5 @@
 /target
 *.obj
 *.ppm
+.DS_Store
+/models
