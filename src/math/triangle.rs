@@ -1,5 +1,10 @@
 use crate::math::{RayIntersects, aabb::Aabb, mat4::Mat4, ray::Ray, vec4::Vec4};
 
+fn transform_normal(inv_t: Mat4, n: Vec4) -> Vec4 {
+    let n = inv_t * n;
+    Vec4::new(n.x(), n.y(), n.z(), 0.0).normalize()
+}
+
 #[derive(Debug, Clone)]
 pub struct Triangle {
     p1: Vec4,
@@ -65,9 +70,9 @@ impl Triangle {
         let p3 = matrix * self.p3;
 
         let inv_t = matrix.inverse().transpose();
-        let n1 = (inv_t * self.n1).normalize();
-        let n2 = (inv_t * self.n2).normalize();
-        let n3 = (inv_t * self.n3).normalize();
+        let n1 = transform_normal(inv_t, self.n1);
+        let n2 = transform_normal(inv_t, self.n2);
+        let n3 = transform_normal(inv_t, self.n3);
 
         Self::new_with_normals(p1, p2, p3, n1, n2, n3)
     }

@@ -26,8 +26,8 @@ fn main() {
     let path = argv.get(1).expect("missing path to obj file");
 
     let obj = Obj::open(path).unwrap();
-    let scaling = Mat4::scaling(Vec4::from([50.0, 50.0, 50.0, 1.0]));
-    let rotation = Mat4::rotation(Vec4::from([0.0, 1.0, 0.0, 0.0]), f32::consts::PI);
+    let scaling = Mat4::scaling(Vec4::from([1.0, 1.0, 1.0, 1.0]));
+    let rotation = Mat4::rotation(Vec4::from([0.0, 1.0, 0.0, 0.0]), 3.0 * f32::consts::PI);
     dbg!(obj.triangles.len());
 
     let centroid = obj.centroid();
@@ -41,14 +41,14 @@ fn main() {
 
     let camera = Camera::new(
         Ray::new(
-            Vec4::from([0.0, 0.0, -5.0, 1.0]),
+            Vec4::from([0.0, 0.0, -10.0, 1.0]),
             Vec4::from([0.0, 0.0, 1.0, 0.0]),
         ),
         1.0,
     );
 
-    let width = 1000;
-    let height = 1000;
+    let width = 1920;
+    let height = 1080;
 
     let mut ppm = Ppm::new(width, height);
 

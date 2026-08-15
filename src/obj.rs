@@ -74,11 +74,12 @@ impl Obj {
         let triangles = triangles
             .into_iter()
             .map(|(i1, i2, i3)| {
-                let n1 = normals[i1].unwrap().normalize();
-                let n2 = normals[i2].unwrap().normalize();
-                let n3 = normals[i3].unwrap().normalize();
+                // don't accumulate normals, just use the face normal for now
+                // let n1 = normals[i1].unwrap().normalize();
+                // let n2 = normals[i2].unwrap().normalize();
+                // let n3 = normals[i3].unwrap().normalize();
 
-                Triangle::new_with_normals(verts[i1], verts[i2], verts[i3], n1, n2, n3)
+                Triangle::new(verts[i1], verts[i2], verts[i3])
             })
             .collect();
 
