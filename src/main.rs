@@ -22,8 +22,11 @@ pub fn shade(intersection: Vec4, triangle: Triangle) -> Vec4 {
 }
 
 fn main() {
-    let obj = Obj::open("models/cornell.obj").unwrap();
-    // let scaling = Mat4::scaling(Vec4::from([1000.0, 1000.0, 1000.0, 1.0]));
+    let argv = std::env::args().collect::<Vec<String>>();
+    let path = argv.get(1).expect("missing path to obj file");
+
+    let obj = Obj::open(path).unwrap();
+    let scaling = Mat4::scaling(Vec4::from([50.0, 50.0, 50.0, 1.0]));
     let rotation = Mat4::rotation(Vec4::from([0.0, 1.0, 0.0, 0.0]), f32::consts::PI);
     dbg!(obj.triangles.len());
 
@@ -31,14 +34,14 @@ fn main() {
     dbg!(centroid);
 
     let translate = Mat4::translation(centroid * -1.0);
-    let obj = obj.apply(translate).apply(rotation);
+    let obj = obj.apply(translate).apply(rotation).apply(scaling);
     let octree = OctreeNode::from_obj(obj);
 
     eprintln!("built octree");
 
     let camera = Camera::new(
         Ray::new(
-            Vec4::from([0.0, 0.0, -10.0, 1.0]),
+            Vec4::from([0.0, 0.0, -5.0, 1.0]),
             Vec4::from([0.0, 0.0, 1.0, 0.0]),
         ),
         1.0,
@@ -55,7 +58,8 @@ fn main() {
         .par_iter()
         .map(|ray| {
             if let Some((t, tri)) = octree.intersects(*ray) {
-                let norm = tri.normal() * 0.5 + Vec4::from([0.5; 4]);
+                let intersection = ray.at(t);
+                let norm = tri.normal(intersection) * 0.5 + Vec4::from([0.5; 4]);
                 let r = (norm.x() * 255.0) as u8;
                 let g = (norm.y() * 255.0) as u8;
                 let b = (norm.z() * 255.0) as u8;

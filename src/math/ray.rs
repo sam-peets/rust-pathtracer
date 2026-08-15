@@ -10,4 +10,8 @@ impl Ray {
     pub fn new(origin: Vec4, direction: Vec4) -> Self {
         Self { origin, direction }
     }
+
+    pub fn at(&self, t: f32) -> Vec4 {
+        self.origin + self.direction * t
+    }
 }

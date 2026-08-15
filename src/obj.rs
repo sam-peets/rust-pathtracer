@@ -34,6 +34,7 @@ impl Obj {
 
         let mut verts = vec![Vec4::new(0.0, 0.0, 0.0, 0.0)];
         let mut triangles = vec![];
+        let mut normals = vec![None];
 
         for line in f.lines() {
             let mut spl = line.split_ascii_whitespace();
@@ -44,20 +45,42 @@ impl Obj {
                     let z: f32 = spl.next().ok_or(anyhow!("missing component 3"))?.parse()?;
 
                     verts.push(Vec4::new(x, y, z, 1.0));
+                    normals.push(None);
                 }
                 Some("f") => {
                     let i1: usize = spl.next().ok_or(anyhow!("missing index 1"))?.parse()?;
                     let i2: usize = spl.next().ok_or(anyhow!("missing index 2"))?.parse()?;
                     let i3: usize = spl.next().ok_or(anyhow!("missing index 3"))?.parse()?;
 
-                    let tri = Triangle::new(verts[i1], verts[i2], verts[i3]);
+                    let e1 = verts[i2] - verts[i1];
+                    let e2 = verts[i3] - verts[i1];
+                    let tn = e1.cross(e2).normalize();
 
-                    triangles.push(tri);
+                    triangles.push((i1, i2, i3));
+
+                    for i in [i1, i2, i3] {
+                        if let Some(n) = normals[i] {
+                            normals[i] = Some(n + tn);
+                        } else {
+                            normals[i] = Some(tn);
+                        }
+                    }
                 }
                 Some(_) => {}
                 None => {}
             }
         }
+
+        let triangles = triangles
+            .into_iter()
+            .map(|(i1, i2, i3)| {
+                let n1 = normals[i1].unwrap().normalize();
+                let n2 = normals[i2].unwrap().normalize();
+                let n3 = normals[i3].unwrap().normalize();
+
+                Triangle::new_with_normals(verts[i1], verts[i2], verts[i3], n1, n2, n3)
+            })
+            .collect();
 
         Ok(Self { triangles })
     }

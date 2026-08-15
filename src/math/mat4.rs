@@ -60,6 +60,51 @@ impl Mat4 {
             [0.0, 0.0, 0.0, 1.0],
         ])
     }
+
+    pub fn inverse(&self) -> Self {
+        let a = &self.0;
+
+        let mut s2 = [0.0f32; 3];
+        for i in 0..3 {
+            for r in 0..3 {
+                s2[i] += a[r][i] * a[r][i];
+            }
+        }
+
+        let mut a_inv = [[0.0f32; 3]; 3];
+        for i in 0..3 {
+            for j in 0..3 {
+                a_inv[i][j] = a[j][i] / s2[j];
+            }
+        }
+
+        let t = [a[0][3], a[1][3], a[2][3]];
+        let mut t_inv = [0.0f32; 3];
+        for i in 0..3 {
+            let mut sum = 0.0;
+            for j in 0..3 {
+                sum += a_inv[i][j] * t[j];
+            }
+            t_inv[i] = -sum;
+        }
+
+        Self([
+            [a_inv[0][0], a_inv[0][1], a_inv[0][2], t_inv[0]],
+            [a_inv[1][0], a_inv[1][1], a_inv[1][2], t_inv[1]],
+            [a_inv[2][0], a_inv[2][1], a_inv[2][2], t_inv[2]],
+            [0.0, 0.0, 0.0, 1.0],
+        ])
+    }
+
+    pub fn transpose(&self) -> Self {
+        let mut result = [[0.0f32; 4]; 4];
+        for r in 0..4 {
+            for c in 0..4 {
+                result[r][c] = self.0[c][r];
+            }
+        }
+        Self(result)
+    }
 }
 
 impl Mul<Mat4> for Mat4 {
