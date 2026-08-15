@@ -1,7 +1,7 @@
 use core::f32;
-use std::{fs::File, io::Write};
+use std::fs::File;
 
-use rayon::iter::{IntoParallelRefIterator, ParallelBridge, ParallelIterator};
+use rayon::iter::ParallelIterator;
 
 use crate::{
     camera::Camera,
@@ -11,6 +11,7 @@ use crate::{
     ppm::{Ppm, Rgb8},
 };
 
+pub mod bsdf;
 pub mod camera;
 mod math;
 mod obj;
