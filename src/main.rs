@@ -1,7 +1,7 @@
 use core::f32;
 use std::{fs::File, io::Write};
 
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefIterator, ParallelBridge, ParallelIterator};
 
 use crate::{
     camera::Camera,
@@ -26,7 +26,7 @@ fn main() {
     let path = argv.get(1).expect("missing path to obj file");
 
     let obj = Obj::open(path).unwrap();
-    let scaling = Mat4::scaling(Vec4::from([1.0, 1.0, 1.0, 1.0]));
+    let scaling = Mat4::scaling(Vec4::from([100.0, 100.0, 100.0, 0.0]));
     let rotation = Mat4::rotation(Vec4::from([0.0, 1.0, 0.0, 0.0]), 3.0 * f32::consts::PI);
     dbg!(obj.triangles.len());
 
@@ -47,17 +47,15 @@ fn main() {
         1.0,
     );
 
-    let width = 1920;
-    let height = 1080;
+    let width = 512;
+    let height = 512;
 
     let mut ppm = Ppm::new(width, height);
 
-    let rays = camera.gen_rays(width, height);
-
-    let cols: Vec<Rgb8> = rays
-        .par_iter()
+    let cols: Vec<Rgb8> = camera
+        .gen_rays_par_iter(width, height)
         .map(|ray| {
-            if let Some((t, tri)) = octree.intersects(*ray) {
+            if let Some((t, tri)) = octree.intersects(ray) {
                 let intersection = ray.at(t);
                 let norm = tri.normal(intersection) * 0.5 + Vec4::from([0.5; 4]);
                 let r = (norm.x() * 255.0) as u8;
@@ -75,5 +73,7 @@ fn main() {
 
     // println!("{}", ppm.emit())
     let mut outfile = File::create("out.ppm").unwrap();
-    outfile.write_all(&ppm.emit().into_bytes()).unwrap();
+    let mut w = std::io::BufWriter::new(&mut outfile);
+    ppm.write_to(&mut w);
+    // outfile.write_all(&ppm.emit().into_bytes()).unwrap();
 }

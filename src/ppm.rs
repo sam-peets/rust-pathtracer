@@ -1,3 +1,5 @@
+use std::io::Write;
+
 #[derive(Clone, Copy, Debug)]
 pub struct Rgb8(u8, u8, u8);
 
@@ -31,6 +33,13 @@ impl Ppm {
 
     pub fn write(&mut self, x: usize, y: usize, color: Rgb8) {
         self.buf[y * self.width + x] = color;
+    }
+
+    pub fn write_to(self, mut w: impl Write) {
+        write!(w, "P3\n{} {}\n255\n", self.width, self.height).unwrap();
+        for col in self.buf {
+            write!(w, "{} {} {} ", col.0, col.1, col.2).unwrap();
+        }
     }
 
     pub fn emit(self) -> String {
