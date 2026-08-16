@@ -56,20 +56,21 @@ impl Triangle {
     }
 
     pub fn normal(&self, point: Vec4) -> Vec4 {
-        let v0 = self.p2 - self.p1;
-        let v1 = self.p3 - self.p1;
-        let v2 = point - self.p1;
-        let d00 = v0.dot(v0);
-        let d01 = v0.dot(v1);
-        let d11 = v1.dot(v1);
-        let d20 = v2.dot(v0);
-        let d21 = v2.dot(v1);
+        // let v0 = self.p2 - self.p1;
+        // let v1 = self.p3 - self.p1;
+        // let v2 = point - self.p1;
+        // let d00 = v0.dot(v0);
+        // let d01 = v0.dot(v1);
+        // let d11 = v1.dot(v1);
+        // let d20 = v2.dot(v0);
+        // let d21 = v2.dot(v1);
 
-        let denom = d00 * d11 - d01 * d01;
-        let v = (d11 * d20 - d01 * d21) / denom;
-        let w = (d00 * d21 - d01 * d20) / denom;
-        let u = 1.0 - v - w;
-        (self.n1 * u + self.n2 * v + self.n3 * w).normalize()
+        // let denom = d00 * d11 - d01 * d01;
+        // let v = (d11 * d20 - d01 * d21) / denom;
+        // let w = (d00 * d21 - d01 * d20) / denom;
+        // let u = 1.0 - v - w;
+        // (self.n1 * u + self.n2 * v + self.n3 * w).normalize()
+        self.n1
     }
 
     pub fn centroid(&self) -> Vec4 {

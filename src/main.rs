@@ -29,12 +29,12 @@ fn tonemap(colour: Vec4) -> Rgb8 {
     Rgb8::new((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
 }
 
-fn trace(ray: Ray, octree: &Octree) -> Vec4 {
+fn trace(ray: Ray, octree: &Octree, rng: &mut fastrand::Rng) -> Vec4 {
     let mut throughput: Vec4 = Vec4::from([1.0, 1.0, 1.0, 1.0]);
     let mut radiance = Vec4::new(0.0, 0.0, 0.0, 0.0);
     let mut ray = ray;
 
-    for _ in 0..MAX_DEPTH {
+    for depth in 0..MAX_DEPTH {
         if let Some((t, triangle)) = octree.intersects(ray) {
             let hit = ray.at(t);
             let material =
@@ -53,7 +53,7 @@ fn trace(ray: Ray, octree: &Octree) -> Vec4 {
             let normal = triangle.normal(hit);
 
             let incoming = ray.direction * -1.0;
-            let outgoing = bsdf.sample(incoming, normal);
+            let outgoing = bsdf.sample(incoming, normal, rng);
             let pdf = bsdf.pdf(incoming, outgoing, normal);
             if pdf <= 0.0 {
                 break;
@@ -67,7 +67,7 @@ fn trace(ray: Ray, octree: &Octree) -> Vec4 {
                 .max(throughput.y())
                 .max(throughput.z())
                 .min(0.95);
-            if fastrand::f32() > termination_chance {
+            if depth >= 3 && fastrand::f32() > termination_chance {
                 break;
             }
             throughput = throughput / termination_chance;
@@ -110,8 +110,8 @@ fn main() {
         1.5,
     );
 
-    let width = 256 * 2;
-    let height = 256 * 2;
+    let width = 256 / 2;
+    let height = 256 / 2;
 
     let mut ppm = Ppm::new(width, height);
 
@@ -122,8 +122,9 @@ fn main() {
         .gen_rays_par_iter(width, height)
         .map(|ray| {
             let mut col = Vec4::from([0.0, 0.0, 0.0, 0.0]);
+            let mut rng = fastrand::Rng::new();
             for _ in 0..spp {
-                col = col + trace(ray, &octree);
+                col = col + trace(ray, &octree, &mut rng);
             }
             let c = count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             if c.is_multiple_of(1000) {

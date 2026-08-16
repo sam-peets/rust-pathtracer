@@ -88,6 +88,12 @@ impl OctreeNode {
                 Vec4::new(0.0, 0.0, 0.0, 0.0),
             ));
 
+        if triangles.is_empty() {
+            return OctreeNode {
+                aabb,
+                data: OctreeData::Empty,
+            };
+        }
         if depth >= MAX_DEPTH || triangles.len() <= MAX_TRIANGLES {
             return OctreeNode {
                 aabb,

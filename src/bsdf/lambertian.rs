@@ -6,14 +6,13 @@ pub struct Lambertian {
 
 impl Bsdf for Lambertian {
     fn eval(&self, incoming: Vec4, outgoing: Vec4, normal: Vec4) -> Vec4 {
-        let cos_theta = normal.dot(outgoing).max(0.0);
-        self.albedo * cos_theta / std::f32::consts::PI
+        self.albedo / std::f32::consts::PI
     }
 
-    fn sample(&self, incoming: Vec4, normal: Vec4) -> Vec4 {
+    fn sample(&self, incoming: Vec4, normal: Vec4, rng: &mut fastrand::Rng) -> Vec4 {
         // cosine-weighted hemisphere
-        let e0 = fastrand::f32();
-        let e1 = fastrand::f32();
+        let e0 = rng.f32();
+        let e1 = rng.f32();
 
         let theta = e0.sqrt().acos();
         let phi = 2.0 * std::f32::consts::PI * e1;
