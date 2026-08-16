@@ -1,10 +1,27 @@
 use crate::{
     math::{RayIntersects, aabb::Aabb, ray::Ray, triangle::Triangle, vec4::Vec4},
-    obj::Obj,
+    obj::{Material, Obj},
 };
 
 const MAX_DEPTH: usize = 16;
 const MAX_TRIANGLES: usize = 32;
+
+pub struct Octree {
+    root: OctreeNode,
+    pub materials: Vec<Material>,
+}
+
+impl Octree {
+    pub fn from_obj(obj: Obj) -> Self {
+        let root = OctreeNode::build(obj.triangles, 0);
+        let materials = obj.materials;
+        Self { root, materials }
+    }
+
+    pub fn intersects(&self, ray: Ray) -> Option<(f32, &Triangle)> {
+        self.root.intersects(ray)
+    }
+}
 
 pub struct OctreeNode {
     pub aabb: Aabb,

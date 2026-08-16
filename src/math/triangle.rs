@@ -15,6 +15,8 @@ pub struct Triangle {
     n1: Vec4,
     n2: Vec4,
     n3: Vec4,
+
+    pub mtl_id: Option<usize>,
 }
 
 impl Triangle {
@@ -29,10 +31,19 @@ impl Triangle {
             n1: normal,
             n2: normal,
             n3: normal,
+            mtl_id: None,
         }
     }
 
-    pub fn new_with_normals(p1: Vec4, p2: Vec4, p3: Vec4, n1: Vec4, n2: Vec4, n3: Vec4) -> Self {
+    pub fn new_with_normals(
+        p1: Vec4,
+        p2: Vec4,
+        p3: Vec4,
+        n1: Vec4,
+        n2: Vec4,
+        n3: Vec4,
+        mtl_id: Option<usize>,
+    ) -> Self {
         Self {
             p1,
             p2,
@@ -40,6 +51,7 @@ impl Triangle {
             n1,
             n2,
             n3,
+            mtl_id,
         }
     }
 
@@ -74,7 +86,7 @@ impl Triangle {
         let n2 = transform_normal(inv_t, self.n2);
         let n3 = transform_normal(inv_t, self.n3);
 
-        Self::new_with_normals(p1, p2, p3, n1, n2, n3)
+        Self::new_with_normals(p1, p2, p3, n1, n2, n3, self.mtl_id)
     }
 
     pub fn aabb(&self) -> Aabb {
@@ -91,6 +103,16 @@ impl Triangle {
             self.p1.w().max(self.p2.w()).max(self.p3.w()),
         );
         Aabb::new(min, max)
+    }
+
+    pub fn tangent_bitangent(&self) -> (Vec4, Vec4) {
+        let edge1 = self.p2 - self.p1;
+        let edge2 = self.p3 - self.p1;
+
+        let tangent = edge1.normalize();
+        let bitangent = edge2.cross(tangent).normalize();
+
+        (tangent, bitangent)
     }
 }
 

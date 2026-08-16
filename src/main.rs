@@ -4,10 +4,11 @@ use std::fs::File;
 use rayon::iter::ParallelIterator;
 
 use crate::{
+    bsdf::{Bsdf, lambertian::Lambertian},
     camera::Camera,
     math::{mat4::Mat4, ray::Ray, triangle::Triangle, vec4::Vec4},
-    obj::Obj,
-    octree::OctreeNode,
+    obj::{Material, Obj},
+    octree::{Octree, OctreeNode},
     ppm::{Ppm, Rgb8},
 };
 
@@ -18,16 +19,77 @@ mod obj;
 mod octree;
 mod ppm;
 
-pub fn shade(intersection: Vec4, triangle: Triangle) -> Vec4 {
-    todo!()
+const MAX_DEPTH: usize = 8;
+
+fn tonemap(colour: Vec4) -> Rgb8 {
+    let r = (colour.x() / (colour.x() + 1.0)).powf(1.0 / 2.2);
+    let g = (colour.y() / (colour.y() + 1.0)).powf(1.0 / 2.2);
+    let b = (colour.z() / (colour.z() + 1.0)).powf(1.0 / 2.2);
+
+    Rgb8::new((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
+}
+
+fn trace(ray: Ray, octree: &Octree) -> Vec4 {
+    let mut throughput: Vec4 = Vec4::from([1.0, 1.0, 1.0, 1.0]);
+    let mut radiance = Vec4::new(0.0, 0.0, 0.0, 0.0);
+    let mut ray = ray;
+
+    for _ in 0..MAX_DEPTH {
+        if let Some((t, triangle)) = octree.intersects(ray) {
+            let hit = ray.at(t);
+            let material =
+                if let Some(material) = triangle.mtl_id.and_then(|id| octree.materials.get(id)) {
+                    material
+                } else {
+                    &Material::default()
+                };
+            let bsdf = Lambertian {
+                albedo: material.kd,
+            };
+
+            radiance = radiance + material.ke * throughput;
+
+            // let (tangent, bitangent) = triangle.tangent_bitangent();
+            let normal = triangle.normal(hit);
+
+            let incoming = ray.direction * -1.0;
+            let outgoing = bsdf.sample(incoming, normal);
+            let pdf = bsdf.pdf(incoming, outgoing, normal);
+            if pdf <= 0.0 {
+                break;
+            }
+            let f = bsdf.eval(incoming, outgoing, normal);
+            let cos_theta = normal.dot(outgoing).abs();
+            throughput = f * throughput * cos_theta / pdf;
+
+            let termination_chance = throughput
+                .x()
+                .max(throughput.y())
+                .max(throughput.z())
+                .min(0.95);
+            if fastrand::f32() > termination_chance {
+                break;
+            }
+            throughput = throughput / termination_chance;
+
+            ray = Ray::new(hit + normal * 1e-4, outgoing);
+        } else {
+            radiance = radiance + Vec4::from([0.4, 0.8, 0.8, 1.0]) * throughput;
+            break;
+        }
+    }
+
+    radiance
 }
 
 fn main() {
+    env_logger::init();
+
     let argv = std::env::args().collect::<Vec<String>>();
     let path = argv.get(1).expect("missing path to obj file");
 
     let obj = Obj::open(path).unwrap();
-    let scaling = Mat4::scaling(Vec4::from([100.0, 100.0, 100.0, 0.0]));
+    let scaling = Mat4::scaling(Vec4::from([1.0, 1.0, 1.0, 0.0]));
     let rotation = Mat4::rotation(Vec4::from([0.0, 1.0, 0.0, 0.0]), 3.0 * f32::consts::PI);
     dbg!(obj.triangles.len());
 
@@ -36,38 +98,40 @@ fn main() {
 
     let translate = Mat4::translation(centroid * -1.0);
     let obj = obj.apply(translate).apply(rotation).apply(scaling);
-    let octree = OctreeNode::from_obj(obj);
+    let octree = Octree::from_obj(obj);
 
     eprintln!("built octree");
 
     let camera = Camera::new(
         Ray::new(
-            Vec4::from([0.0, 0.0, -10.0, 1.0]),
+            Vec4::from([0.0, 0.0, -12.5, 1.0]),
             Vec4::from([0.0, 0.0, 1.0, 0.0]),
         ),
-        1.0,
+        1.5,
     );
 
-    let width = 512;
-    let height = 512;
+    let width = 256 * 2;
+    let height = 256 * 2;
 
     let mut ppm = Ppm::new(width, height);
 
+    let count = std::sync::atomic::AtomicUsize::new(0);
+
+    let spp = 32 * 4;
     let cols: Vec<Rgb8> = camera
         .gen_rays_par_iter(width, height)
         .map(|ray| {
-            if let Some((t, tri)) = octree.intersects(ray) {
-                let intersection = ray.at(t);
-                let norm = tri.normal(intersection) * 0.5 + Vec4::from([0.5; 4]);
-                let r = (norm.x() * 255.0) as u8;
-                let g = (norm.y() * 255.0) as u8;
-                let b = (norm.z() * 255.0) as u8;
-
-                Rgb8::new(r, g, b)
-            } else {
-                Rgb8::new(130, 180, 180)
+            let mut col = Vec4::from([0.0, 0.0, 0.0, 0.0]);
+            for _ in 0..spp {
+                col = col + trace(ray, &octree);
             }
+            let c = count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            if c.is_multiple_of(1000) {
+                eprintln!("{} / {}", c, width * height);
+            }
+            col / (spp as f32)
         })
+        .map(tonemap)
         .collect();
 
     ppm.buf = cols;
