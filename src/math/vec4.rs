@@ -1,6 +1,7 @@
 use std::ops::{Add, Div, Mul, Sub};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
+#[repr(align(4))]
 pub struct Vec4([f32; 4]);
 
 impl From<[f32; 4]> for Vec4 {
@@ -118,6 +119,19 @@ impl Div<f32> for Vec4 {
             self.0[1] / rhs,
             self.0[2] / rhs,
             self.0[3] / rhs,
+        ])
+    }
+}
+
+impl Div<Vec4> for f32 {
+    type Output = Vec4;
+
+    fn div(self, rhs: Vec4) -> Self::Output {
+        Vec4([
+            self / rhs.0[0],
+            self / rhs.0[1],
+            self / rhs.0[2],
+            self / rhs.0[3],
         ])
     }
 }

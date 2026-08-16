@@ -4,19 +4,19 @@ use std::fs::File;
 use rayon::iter::ParallelIterator;
 
 use crate::{
+    acceleration_structure::{AccelerationStructure, bvh::Bvh, octree::Octree},
     bsdf::{Bsdf, cook_torrance::CookTorrance, lambertian::Lambertian},
     camera::Camera,
     math::{mat4::Mat4, ray::Ray, triangle::Triangle, vec4::Vec4},
     obj::{Material, Obj},
-    octree::{Octree, OctreeNode},
     ppm::{Ppm, Rgb8},
 };
 
-pub mod bsdf;
-pub mod camera;
+mod acceleration_structure;
+mod bsdf;
+mod camera;
 mod math;
 mod obj;
-mod octree;
 mod ppm;
 
 const MAX_DEPTH: usize = 8;
@@ -30,20 +30,25 @@ fn tonemap(color: Vec4) -> Rgb8 {
     Rgb8::new((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
 }
 
-fn trace(ray: Ray, octree: &Octree, rng: &mut fastrand::Rng) -> Vec4 {
+fn trace(
+    ray: Ray,
+    bvh: &impl AccelerationStructure,
+    materials: &[Material],
+    rng: &mut fastrand::Rng,
+) -> Vec4 {
     let mut throughput: Vec4 = Vec4::from([1.0, 1.0, 1.0, 1.0]);
     let mut radiance = Vec4::new(0.0, 0.0, 0.0, 0.0);
     let mut ray = ray;
 
     for depth in 0..MAX_DEPTH {
-        if let Some((t, triangle)) = octree.intersects(ray) {
+        if let Some((t, triangle)) = bvh.intersects(ray) {
             let hit = ray.at(t);
-            let material =
-                if let Some(material) = triangle.mtl_id.and_then(|id| octree.materials.get(id)) {
-                    material
-                } else {
-                    &Material::default()
-                };
+            let material = if let Some(material) = triangle.mtl_id.and_then(|id| materials.get(id))
+            {
+                material
+            } else {
+                &Material::default()
+            };
 
             let bsdf = Lambertian {
                 albedo: material.kd,
@@ -109,7 +114,10 @@ fn main() {
 
     let translate = Mat4::translation(centroid * -1.0);
     let obj = obj.apply(translate).apply(rotation).apply(scaling);
-    let octree = Octree::from_obj(obj);
+    let bvh = Bvh::build(obj.triangles, obj.materials);
+    let materials = bvh.materials.clone();
+    // let octree = Octree::build(obj.triangles, obj.materials);
+    // let materials = octree.materials.clone();
 
     eprintln!("built octree");
 
@@ -141,7 +149,7 @@ fn main() {
                     (ray.direction + Vec4::from([rng.f32(), rng.f32(), rng.f32(), 0.0]) * 1e-3)
                         .normalize(),
                 );
-                col = col + trace(ray, &octree, &mut rng);
+                col = col + trace(ray, &bvh, &materials, &mut rng);
             }
             let c = count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             if c.is_multiple_of(1000) {

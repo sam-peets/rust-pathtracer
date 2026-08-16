@@ -1,4 +1,4 @@
-use crate::math::{RayIntersects, vec4::Vec4};
+use crate::math::{RayIntersects, ray::Ray, vec4::Vec4};
 
 pub struct Aabb {
     min: Vec4,
@@ -11,7 +11,7 @@ impl Aabb {
     }
 
     pub fn centroid(&self) -> Vec4 {
-        (self.min + self.max)/2.0
+        (self.min + self.max) / 2.0
     }
 
     pub fn min(&self) -> Vec4 {
@@ -67,46 +67,23 @@ impl Aabb {
 }
 
 impl RayIntersects for Aabb {
-    fn intersects(&self, ray: super::ray::Ray) -> Option<f32> {
-        let mut tmin = f32::NEG_INFINITY;
-        let mut tmax = f32::INFINITY;
+    fn intersects(&self, ray: Ray) -> Option<f32> {
+        let ray_inv = 1.0 / ray.direction;
+        let t1 = (self.min - ray.origin) * ray_inv;
+        let t2 = (self.max - ray.origin) * ray_inv;
 
-        let axes = [
-            (self.min.x(), self.max.x(), ray.origin.x(), ray.direction.x()),
-            (self.min.y(), self.max.y(), ray.origin.y(), ray.direction.y()),
-            (self.min.z(), self.max.z(), ray.origin.z(), ray.direction.z()),
-        ];
+        let tmin = t1
+            .x()
+            .min(t2.x())
+            .max(t1.y().min(t2.y()))
+            .max(t1.z().min(t2.z()))
+            .max(0.0);
+        let tmax = t1
+            .x()
+            .max(t2.x())
+            .min(t1.y().max(t2.y()))
+            .min(t1.z().max(t2.z()));
 
-        for (lo, hi, o, d) in axes {
-            if d.abs() < f32::EPSILON {
-                if o < lo || o > hi {
-                    return None;
-                }
-                continue;
-            }
-
-            let t1 = (lo - o) / d;
-            let t2 = (hi - o) / d;
-            let (near, far) = if t1 <= t2 { (t1, t2) } else { (t2, t1) };
-
-            if near > tmin {
-                tmin = near;
-            }
-            if far < tmax {
-                tmax = far;
-            }
-
-            if tmin > tmax {
-                return None;
-            }
-        }
-
-        if tmin > f32::EPSILON {
-            Some(tmin)
-        } else if tmax > f32::EPSILON {
-            Some(tmax)
-        } else {
-            None
-        }
+        (tmax >= tmin).then_some(tmin)
     }
 }

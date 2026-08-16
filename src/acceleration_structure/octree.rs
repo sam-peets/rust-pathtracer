@@ -1,4 +1,5 @@
 use crate::{
+    acceleration_structure::AccelerationStructure,
     math::{RayIntersects, aabb::Aabb, ray::Ray, triangle::Triangle, vec4::Vec4},
     obj::{Material, Obj},
 };
@@ -11,14 +12,14 @@ pub struct Octree {
     pub materials: Vec<Material>,
 }
 
-impl Octree {
-    pub fn from_obj(obj: Obj) -> Self {
-        let root = OctreeNode::build(obj.triangles, 0);
-        let materials = obj.materials;
+impl AccelerationStructure for Octree {
+    fn build(triangles: Vec<Triangle>, materials: Vec<Material>) -> Self {
+        let root = OctreeNode::build(triangles, 0);
+        let materials = materials;
         Self { root, materials }
     }
 
-    pub fn intersects(&self, ray: Ray) -> Option<(f32, &Triangle)> {
+    fn intersects(&self, ray: Ray) -> Option<(f32, &Triangle)> {
         self.root.intersects(ray)
     }
 }

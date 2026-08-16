@@ -5,7 +5,7 @@ fn transform_normal(inv_t: Mat4, n: Vec4) -> Vec4 {
     Vec4::new(n.x(), n.y(), n.z(), 0.0).normalize()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Triangle {
     p1: Vec4,
     p2: Vec4,
