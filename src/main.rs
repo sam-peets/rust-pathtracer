@@ -113,8 +113,8 @@ fn main() {
         1.5,
     );
 
-    let width = 256 * 2;
-    let height = 256 * 2;
+    let width = 256;
+    let height = 256;
 
     let mut ppm = Ppm::new(width, height);
 
@@ -123,6 +123,7 @@ fn main() {
     let spp = 64 * 16;
     let cols: Vec<Rgb8> = camera
         .gen_rays_par_iter(width, height)
+        // .gen_rays_iter(width, height)
         .map(|ray| {
             let mut col = Vec4::from([0.0, 0.0, 0.0, 0.0]);
             let mut rng = fastrand::Rng::new();

@@ -67,4 +67,26 @@ impl Camera {
             Ray::new(self.pos.origin, dir)
         })
     }
+
+    pub fn gen_rays_iter(&self, width: usize, height: usize) -> impl Iterator<Item = Ray> + '_ {
+        let forward = self.pos.direction.normalize();
+        let right = Vec4::from([0.0, 1.0, 0.0, 0.0]).cross(forward).normalize();
+        let up = right.cross(forward);
+
+        let aspect = width as f32 / height as f32;
+
+        (0..height * width).map(move |i| {
+            let x = (i % width) as f32;
+            let y = (i / width) as f32;
+            let width = width as f32;
+            let height = height as f32;
+
+            let u = -((2.0 * (x + 0.5) / width - 1.0) * aspect);
+            let v = -(1.0 - 2.0 * (y + 0.5) / height);
+
+            let dir = right * u + up * v + forward * self.focal_length;
+
+            Ray::new(self.pos.origin, dir)
+        })
+    }
 }
