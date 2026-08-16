@@ -20,11 +20,12 @@ mod octree;
 mod ppm;
 
 const MAX_DEPTH: usize = 8;
+const SKY_COLOR: Vec4 = Vec4::new(0.25, 0.56, 1.0, 1.0);
 
-fn tonemap(colour: Vec4) -> Rgb8 {
-    let r = (colour.x() / (colour.x() + 1.0)).powf(1.0 / 2.2);
-    let g = (colour.y() / (colour.y() + 1.0)).powf(1.0 / 2.2);
-    let b = (colour.z() / (colour.z() + 1.0)).powf(1.0 / 2.2);
+fn tonemap(color: Vec4) -> Rgb8 {
+    let r = (color.x() / (color.x() + 1.0)).powf(1.0 / 2.2);
+    let g = (color.y() / (color.y() + 1.0)).powf(1.0 / 2.2);
+    let b = (color.z() / (color.z() + 1.0)).powf(1.0 / 2.2);
 
     Rgb8::new((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
 }
@@ -62,19 +63,21 @@ fn trace(ray: Ray, octree: &Octree, rng: &mut fastrand::Rng) -> Vec4 {
             let cos_theta = normal.dot(outgoing).abs();
             throughput = f * throughput * cos_theta / pdf;
 
-            let termination_chance = throughput
-                .x()
-                .max(throughput.y())
-                .max(throughput.z())
-                .min(0.95);
-            if depth >= 3 && fastrand::f32() > termination_chance {
-                break;
+            if depth >= 3 {
+                let termination_chance = throughput
+                    .x()
+                    .max(throughput.y())
+                    .max(throughput.z())
+                    .min(0.95);
+                if termination_chance <= 0.0 || rng.f32() > termination_chance {
+                    break;
+                }
+                throughput = throughput / termination_chance;
             }
-            throughput = throughput / termination_chance;
 
             ray = Ray::new(hit + normal * 1e-4, outgoing);
         } else {
-            radiance = radiance + Vec4::from([0.4, 0.8, 0.8, 1.0]) * throughput;
+            radiance = radiance + SKY_COLOR * throughput;
             break;
         }
     }
@@ -104,26 +107,31 @@ fn main() {
 
     let camera = Camera::new(
         Ray::new(
-            Vec4::from([0.0, 0.0, -12.5, 1.0]),
+            Vec4::from([0.0, 0.0, -15.0, 1.0]),
             Vec4::from([0.0, 0.0, 1.0, 0.0]),
         ),
         1.5,
     );
 
-    let width = 256 / 2;
-    let height = 256 / 2;
+    let width = 256 * 2;
+    let height = 256 * 2;
 
     let mut ppm = Ppm::new(width, height);
 
     let count = std::sync::atomic::AtomicUsize::new(0);
 
-    let spp = 32 * 4;
+    let spp = 64 * 16;
     let cols: Vec<Rgb8> = camera
         .gen_rays_par_iter(width, height)
         .map(|ray| {
             let mut col = Vec4::from([0.0, 0.0, 0.0, 0.0]);
             let mut rng = fastrand::Rng::new();
             for _ in 0..spp {
+                let ray = Ray::new(
+                    ray.origin,
+                    (ray.direction + Vec4::from([rng.f32(), rng.f32(), rng.f32(), 0.0]) * 1e-3)
+                        .normalize(),
+                );
                 col = col + trace(ray, &octree, &mut rng);
             }
             let c = count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
