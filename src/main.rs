@@ -4,7 +4,7 @@ use std::fs::File;
 use rayon::iter::ParallelIterator;
 
 use crate::{
-    bsdf::{Bsdf, lambertian::Lambertian},
+    bsdf::{Bsdf, cook_torrance::CookTorrance, lambertian::Lambertian},
     camera::Camera,
     math::{mat4::Mat4, ray::Ray, triangle::Triangle, vec4::Vec4},
     obj::{Material, Obj},
@@ -44,9 +44,17 @@ fn trace(ray: Ray, octree: &Octree, rng: &mut fastrand::Rng) -> Vec4 {
                 } else {
                     &Material::default()
                 };
+
             let bsdf = Lambertian {
                 albedo: material.kd,
             };
+
+            // let bsdf = CookTorrance {
+            //     albedo: material.kd,
+            //     roughness: material.pr,
+            //     ior: material.ni,
+            //     metallic: material.pm,
+            // };
 
             radiance = radiance + material.ke * throughput;
 
@@ -113,14 +121,14 @@ fn main() {
         1.5,
     );
 
-    let width = 256;
-    let height = 256;
+    let width = 32 * 2 * 2;
+    let height = 32 * 2 * 2;
 
     let mut ppm = Ppm::new(width, height);
 
     let count = std::sync::atomic::AtomicUsize::new(0);
 
-    let spp = 64 * 16;
+    let spp = 64 * 16 * 8;
     let cols: Vec<Rgb8> = camera
         .gen_rays_par_iter(width, height)
         // .gen_rays_iter(width, height)

@@ -1,3 +1,4 @@
+pub mod cook_torrance;
 pub mod lambertian;
 
 use crate::math::vec4::Vec4;

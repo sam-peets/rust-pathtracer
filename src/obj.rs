@@ -110,6 +110,88 @@ impl Mtl {
                         return Err(anyhow!("bad mtl"));
                     }
                 }
+                Some("Ni") => {
+                    if let Some(name) = &current_material
+                        && let Some(mat) = materials.get_mut(name)
+                    {
+                        mat.ni = spl.next().ok_or(anyhow!("missing Ni"))?.parse()?;
+                    } else {
+                        return Err(anyhow!("bad mtl"));
+                    }
+                }
+                Some("d") => {
+                    if let Some(name) = &current_material
+                        && let Some(mat) = materials.get_mut(name)
+                    {
+                        mat.d = spl.next().ok_or(anyhow!("missing d"))?.parse()?;
+                    } else {
+                        return Err(anyhow!("bad mtl"));
+                    }
+                }
+                Some("illum") => {
+                    if let Some(name) = &current_material
+                        && let Some(mat) = materials.get_mut(name)
+                    {
+                        mat.illum =
+                            IlluminationModel(spl.next().ok_or(anyhow!("missing illum"))?.parse()?);
+                    } else {
+                        return Err(anyhow!("bad mtl"));
+                    }
+                }
+                Some("Pr") => {
+                    if let Some(name) = &current_material
+                        && let Some(mat) = materials.get_mut(name)
+                    {
+                        mat.pr = spl.next().ok_or(anyhow!("missing Pr"))?.parse()?;
+                    } else {
+                        return Err(anyhow!("bad mtl"));
+                    }
+                }
+                Some("Pm") => {
+                    if let Some(name) = &current_material
+                        && let Some(mat) = materials.get_mut(name)
+                    {
+                        mat.pm = spl.next().ok_or(anyhow!("missing Pm"))?.parse()?;
+                    } else {
+                        return Err(anyhow!("bad mtl"));
+                    }
+                }
+                Some("Pc") => {
+                    if let Some(name) = &current_material
+                        && let Some(mat) = materials.get_mut(name)
+                    {
+                        mat.pc = spl.next().ok_or(anyhow!("missing Pc"))?.parse()?;
+                    } else {
+                        return Err(anyhow!("bad mtl"));
+                    }
+                }
+                Some("Pcr") => {
+                    if let Some(name) = &current_material
+                        && let Some(mat) = materials.get_mut(name)
+                    {
+                        mat.pcr = spl.next().ok_or(anyhow!("missing Pcr"))?.parse()?;
+                    } else {
+                        return Err(anyhow!("bad mtl"));
+                    }
+                }
+                Some("aniso") => {
+                    if let Some(name) = &current_material
+                        && let Some(mat) = materials.get_mut(name)
+                    {
+                        mat.aniso = spl.next().ok_or(anyhow!("missing aniso"))?.parse()?;
+                    } else {
+                        return Err(anyhow!("bad mtl"));
+                    }
+                }
+                Some("anisor") => {
+                    if let Some(name) = &current_material
+                        && let Some(mat) = materials.get_mut(name)
+                    {
+                        mat.anisor = spl.next().ok_or(anyhow!("missing anisor"))?.parse()?;
+                    } else {
+                        return Err(anyhow!("bad mtl"));
+                    }
+                }
                 Some(op) => {
                     log::warn!("ignoring mtl op: {}", op);
                 }
