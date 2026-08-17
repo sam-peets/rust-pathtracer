@@ -1,9 +1,6 @@
-use std::ops::DivAssign;
+use core::f32;
 
 use crate::{bsdf::Bsdf, math::vec4::Vec4};
-
-/// Clamped away from zero so that a perfect mirror doesn't send `ggx` to 0/0.
-const MIN_ROUGHNESS: f32 = 0.03;
 
 pub struct CookTorrance {
     pub albedo: Vec4,
@@ -13,66 +10,88 @@ pub struct CookTorrance {
 }
 
 impl CookTorrance {
-    fn alpha(&self) -> f32 {
-        let roughness = self.roughness.clamp(MIN_ROUGHNESS, 1.0);
-        roughness * roughness
+    fn d_blinn_phong(&self, wh: Vec4, normal: Vec4) -> f32 {
+        let alpha = self.roughness * self.roughness;
+        let alpha2 = alpha * alpha;
+        let h_dot_n = wh.dot(normal).max(0.0);
+
+        1.0 / (f32::consts::PI * alpha2) * h_dot_n.powf(2.0 / alpha2 - 2.0)
     }
 
-    fn ggx(&self, half: Vec4, normal: Vec4) -> f32 {
-        let alpha = self.alpha();
+    fn d_ggx(&self, wh: Vec4, normal: Vec4) -> f32 {
+        let roughness = self.roughness.max(0.003);
+        let alpha = roughness * roughness;
         let alpha2 = alpha * alpha;
 
-        let cos_theta = normal.dot(half).max(0.0);
-        let cos_theta2 = cos_theta * cos_theta;
+        let n_dot_m = normal.dot(wh);
+        let tan2_theta_m = -(n_dot_m * n_dot_m - 1.0) / (n_dot_m * n_dot_m);
+        let denom = n_dot_m * n_dot_m * (alpha2 + tan2_theta_m);
 
-        let denom = cos_theta2 * (alpha2 - 1.0) + 1.0;
-        alpha2 / (std::f32::consts::PI * denom * denom)
+        if n_dot_m < 0.0 {
+            0.0
+        } else {
+            alpha2 / (f32::consts::PI * denom * denom)
+        }
     }
-
-    /// Height-correlated Smith masking-shadowing, with the 1/(4 cos_i cos_o)
-    /// factor of the microfacet denominator folded in so grazing angles can't
-    /// divide by zero.
-    fn smith_v(&self, incoming: Vec4, outgoing: Vec4, normal: Vec4) -> f32 {
-        let alpha = self.alpha();
+    fn g_ggx_g1(&self, wx: Vec4, wh: Vec4, normal: Vec4) -> f32 {
+        let roughness = self.roughness.min(0.003);
+        let alpha = roughness * roughness;
         let alpha2 = alpha * alpha;
+        let x_dot_h = wx.dot(wh);
+        let x_dot_n = wx.dot(normal);
 
-        let cos_i = normal.dot(incoming).max(0.0);
-        let cos_o = normal.dot(outgoing).max(0.0);
+        let mu2 = x_dot_n * x_dot_n;
+        let tan2_theta_x = (1.0 - mu2) / mu2;
 
-        let lambda_i = (alpha2 + (1.0 - alpha2) * cos_i * cos_i).sqrt();
-        let lambda_o = (alpha2 + (1.0 - alpha2) * cos_o * cos_o).sqrt();
-
-        let denom = cos_o * lambda_i + cos_i * lambda_o;
-        if denom <= 0.0 { 0.0 } else { 0.5 / denom }
+        let denom = 1.0 + (1.0 + alpha2 * tan2_theta_x).sqrt();
+        if (x_dot_h / x_dot_n) < 0.0 {
+            0.0
+        } else {
+            (2.0 / denom).max(0.0)
+        }
+    }
+    fn g_ggx(&self, wi: Vec4, wo: Vec4, normal: Vec4) -> f32 {
+        let half = (wi + wo).normalize();
+        self.g_ggx_g1(wi, half, normal) * self.g_ggx_g1(wo, half, normal)
     }
 
-    fn schlick(&self, half: Vec4, outgoing: Vec4) -> Vec4 {
-        let dielectric = (self.ior - 1.0).powi(2) / (self.ior + 1.0).powi(2);
-        let f0 = Vec4::new(dielectric, dielectric, dielectric, dielectric);
-        let f0 = f0 + (self.albedo - f0) * self.metallic;
-        let cos_theta = half.dot(outgoing).max(0.0);
-        f0 + (Vec4::new(1.0, 1.0, 1.0, 1.0) - f0) * (1.0 - cos_theta).powi(5)
+    // height-correlated smith
+    fn g_smith(&self, wi: Vec4, wo: Vec4, normal: Vec4, lambda: fn(Vec4) -> f32) -> f32 {
+        let wh = (wi + wo).normalize();
+
+        todo!()
+    }
+
+    fn f_schlick(&self, wi: Vec4, wo: Vec4) -> f32 {
+        let wh = (wi + wo).normalize();
+        let f0 = (self.ior - 1.0).powi(2) / (self.ior + 1.0).powi(2);
+        let v_dot_h = wi.dot(wh).clamp(0.0, 1.0);
+
+        f0 + (1.0 - f0) * (1.0 - v_dot_h).powi(5)
     }
 }
 
 impl Bsdf for CookTorrance {
-    fn eval(&self, incoming: Vec4, outgoing: Vec4, normal: Vec4) -> Vec4 {
-        if normal.dot(incoming) <= 0.0 || normal.dot(outgoing) <= 0.0 {
+    fn eval(&self, wi: Vec4, wo: Vec4, normal: Vec4) -> Vec4 {
+        let wh = (wi + wo).normalize();
+        let d = self.d_ggx(wh, normal);
+        let g = self.g_ggx(wi, wo, normal);
+        let f = self.f_schlick(wi, wo);
+
+        let n_dot_l = normal.dot(wo);
+        let n_dot_v = normal.dot(wi);
+        if n_dot_l <= 0.0 || n_dot_v <= 0.0 {
             return Vec4::new(0.0, 0.0, 0.0, 0.0);
         }
 
-        let half = (incoming + outgoing).normalize();
-        let d = self.ggx(half, normal);
-        let v = self.smith_v(incoming, outgoing, normal);
-        let f = self.schlick(half, outgoing);
+        let ks = (f * (d * g)) / (4.0 * n_dot_l * n_dot_v);
+        let kd = self.albedo / f32::consts::PI * (1.0 - f);
 
-        let specular = f * (d * v);
-        let diffuse = self.albedo * ((Vec4::new(1.0, 1.0, 1.0, 1.0) - f) / std::f32::consts::PI);
-
-        diffuse + specular
+        (Vec4::new(ks, ks, ks, ks) + kd) * n_dot_l
     }
 
-    fn sample(&self, incoming: Vec4, normal: Vec4, rng: &mut fastrand::Rng) -> Vec4 {
+    fn sample(&self, wi: Vec4, normal: Vec4, rng: &mut fastrand::Rng) -> Vec4 {
+        // cosine-weighted hemisphere
         let e0 = rng.f32();
         let e1 = rng.f32();
 
@@ -92,15 +111,11 @@ impl Bsdf for CookTorrance {
         let bitangent = normal.cross(tangent);
 
         // Transform the local direction to world space
-        let direction = tangent * x + bitangent * y + normal * z;
-        direction
+        tangent * x + bitangent * y + normal * z
     }
 
-    fn pdf(&self, incoming: Vec4, outgoing: Vec4, normal: Vec4) -> f32 {
-        // let half = (incoming + outgoing).normalize();
-        // self.ggx(half, normal)
-
-        let cos_theta = normal.dot(outgoing).max(0.0);
+    fn pdf(&self, wi: Vec4, wo: Vec4, normal: Vec4) -> f32 {
+        let cos_theta = normal.dot(wo).max(0.0);
         cos_theta / std::f32::consts::PI
     }
 }

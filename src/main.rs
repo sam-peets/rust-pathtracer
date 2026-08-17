@@ -23,9 +23,12 @@ const MAX_DEPTH: usize = 8;
 const SKY_COLOR: Vec4 = Vec4::new(0.25, 0.56, 1.0, 1.0);
 
 fn tonemap(color: Vec4) -> Rgb8 {
-    let r = (color.x() / (color.x() + 1.0)).powf(1.0 / 2.2);
-    let g = (color.y() / (color.y() + 1.0)).powf(1.0 / 2.2);
-    let b = (color.z() / (color.z() + 1.0)).powf(1.0 / 2.2);
+    let x = color.x().max(0.0);
+    let y = color.y().max(0.0);
+    let z = color.z().max(0.0);
+    let r = (x / (x + 1.0)).powf(1.0 / 2.2);
+    let g = (y / (y + 1.0)).powf(1.0 / 2.2);
+    let b = (z / (z + 1.0)).powf(1.0 / 2.2);
 
     Rgb8::new((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
 }
@@ -50,16 +53,16 @@ fn trace(
                 &Material::default()
             };
 
-            let bsdf = Lambertian {
-                albedo: material.kd,
-            };
-
-            // let bsdf = CookTorrance {
+            // let bsdf = Lambertian {
             //     albedo: material.kd,
-            //     roughness: material.pr,
-            //     ior: material.ni,
-            //     metallic: material.pm,
             // };
+
+            let bsdf = CookTorrance {
+                albedo: material.kd,
+                roughness: material.pr,
+                ior: material.ni,
+                metallic: material.pm,
+            };
 
             radiance = radiance + material.ke * throughput;
 
@@ -73,8 +76,7 @@ fn trace(
                 break;
             }
             let f = bsdf.eval(incoming, outgoing, normal);
-            let cos_theta = normal.dot(outgoing).abs();
-            throughput = f * throughput * cos_theta / pdf;
+            throughput = throughput * (f / pdf);
 
             if depth >= 3 {
                 let termination_chance = throughput
@@ -129,14 +131,15 @@ fn main() {
         1.5,
     );
 
-    let width = 32 * 2 * 2 * 4 * 2;
-    let height = 32 * 2 * 2 * 4 * 2;
+    let width = 32 * 2 * 2 * 2 * 2;
+    let height = 32 * 2 * 2 * 2 * 2;
 
     let mut ppm = Ppm::new(width, height);
 
     let count = std::sync::atomic::AtomicUsize::new(0);
 
-    let spp = 64 * 16 * 4 * 2;
+    let spp = 64 * 16 * 2;
+    // let spp = 2 * 2 * 2 * 2;
     let cols: Vec<Rgb8> = camera
         .gen_rays_par_iter(width, height)
         // .gen_rays_iter(width, height)
