@@ -40,19 +40,53 @@ struct BvhNode {
 
 impl BvhNode {
     pub fn intersects(&self, ray: Ray) -> Option<(f32, &Triangle)> {
-        if self.aabb.intersects(ray).is_none() {
-            return None;
+        let mut best = (f32::INFINITY, None);
+        self.walk(ray, &mut best);
+        if let (t, Some(tri)) = best {
+            Some((t, tri))
+        } else {
+            None
         }
+    }
 
+    fn walk<'a>(&'a self, ray: Ray, best: &mut (f32, Option<&'a Triangle>)) {
         match &self.data {
-            BvhData::Internal { left, right } => [left, right]
-                .iter()
-                .flat_map(|node| node.intersects(ray))
-                .min_by(|(t1, _), (t2, _)| t1.total_cmp(t2)),
-            BvhData::Leaf { triangles } => triangles
-                .iter()
-                .flat_map(|tri| tri.intersects(ray).map(|s| (s, tri)))
-                .min_by(|(t1, _), (t2, _)| t1.total_cmp(t2)),
+            BvhData::Internal { left, right } => {
+                let t_left = left.aabb.intersects(ray);
+                let t_right = right.aabb.intersects(ray);
+
+                match (t_left, t_right) {
+                    (None, None) => (),
+                    (None, Some(t)) => {
+                        if t < best.0 {
+                            right.walk(ray, best);
+                        }
+                    }
+                    (Some(t), None) => {
+                        if t < best.0 {
+                            left.walk(ray, best);
+                        }
+                    }
+                    (Some(tl), Some(tr)) => {
+                        if tl < tr {
+                            left.walk(ray, best);
+                            right.walk(ray, best);
+                        } else {
+                            right.walk(ray, best);
+                            left.walk(ray, best);
+                        }
+                    }
+                }
+            }
+            BvhData::Leaf { triangles } => {
+                for tri in triangles {
+                    if let Some(t) = tri.intersects(ray)
+                        && t < best.0
+                    {
+                        *best = (t, Some(tri))
+                    }
+                }
+            }
         }
     }
 

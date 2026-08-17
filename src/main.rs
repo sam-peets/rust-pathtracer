@@ -129,14 +129,14 @@ fn main() {
         1.5,
     );
 
-    let width = 32 * 2 * 2;
-    let height = 32 * 2 * 2;
+    let width = 32 * 2 * 2 * 4 * 2;
+    let height = 32 * 2 * 2 * 4 * 2;
 
     let mut ppm = Ppm::new(width, height);
 
     let count = std::sync::atomic::AtomicUsize::new(0);
 
-    let spp = 64 * 16 * 8;
+    let spp = 64 * 16 * 4 * 2;
     let cols: Vec<Rgb8> = camera
         .gen_rays_par_iter(width, height)
         // .gen_rays_iter(width, height)

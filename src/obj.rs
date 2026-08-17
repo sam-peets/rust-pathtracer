@@ -206,6 +206,7 @@ impl Mtl {
 pub struct Obj {
     pub triangles: Vec<Triangle>,
     pub materials: Vec<Material>,
+    // pub emissive_triangles: Vec<usize>,
 }
 
 impl Obj {
